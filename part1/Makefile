@@ -39,3 +39,13 @@ ece556.o: ece556.cpp ece556.h
 
 clean:
 	/bin/rm -f *~ *.o ROUTE.exe 
+
+.PHONY: all
+
+all: ROUTE.exe
+
+
+.PHONY: execute
+
+execute: ROUTE.exe
+	./ROUTE.exe in.txt out.txt
