@@ -23,22 +23,15 @@ int readBenchmark(const char *fileName, routingInst *rst){
         stream >> rst->cap;
       } else if (token == "num") {
         stream >> token >> rst->numNets; // Temporarily writing into "token" to ignore "net" from I/P file
-        
+        rst->nets = (net*)malloc(rst->numNets*sizeof(net));
         for (uint32_t i = 0; i < rst->numNets; i++) {
           std::getline(input_file,line);
           std::stringstream net_stream(line);
-          rst->nets[i].numPins = -1;
           if(line[0] == 'n') {
             net_stream >> token >> rst->nets[i].numPins;
           } else {
-            if (rst->nets[i].numPins == -1) {
-              std::cout << "ERROR during parsing net : n" << i << std::endl;
-              return 0;
-            } else {
-              for (uint32_t j = 0; j < rst->nets[i].numPins; j++) {
-                net_stream >> rst->nets[i].pins[j].x >> rst->nets[i].pins[j].y;
-              }
-            }
+            for (uint32_t j = 0; j < rst->nets[i].numPins; j++)
+              net_stream >> rst->nets[i].pins[j].x >> rst->nets[i].pins[j].y;
           }
         }
       }
