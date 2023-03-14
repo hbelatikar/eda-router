@@ -21,6 +21,7 @@ int readBenchmark(const char *fileName, routingInst *rst){
         stream >> rst->gx >> rst->gy;
         rst->numEdges = (rst->gx * (rst->gy - 1) + rst->gy * (rst->gx - 1));
         rst->edgeCaps = (int*)malloc(rst->numEdges*sizeof(int));
+        rst->edgeUtils = (int*)malloc(rst->numEdges*sizeof(int));
       }
       else if (token == "capacity") {
         // Parse the default capacity
@@ -69,15 +70,14 @@ int readBenchmark(const char *fileName, routingInst *rst){
             std::stringstream net_stream(line);
             net_stream >> x1 >> y1 >> x2 >> y2 >> new_cap;
             edgeID = getEdgeID(x1,y1,x2,y2,rst->gx,rst->gy);
-            if (edgeID <= 0) rst->edgeCaps[edgeID] = new_cap;
-            else {
+            if (edgeID >= 0) {
+              rst->edgeCaps[edgeID] = new_cap;
+            } else {
               std::cout << "ERROR: Points not adjacent while updating capacities" << std::endl;
               return 0;
             }
           }
         }
-        for (int i = rst->numEdges - 1; i >= 0; i--) 
-          std::cout << "Edge :" << i << " Cap :" << rst->edgeCaps[i] << "\n";
       }
     }
     input_file.close();
@@ -105,9 +105,10 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
 int release(routingInst *rst){
   
   free(rst->edgeCaps);
-  // free(rst->edgeUtils);
+  free(rst->edgeUtils);
   free(rst->nets->pins);
   free(rst->nets);
+
   return 1;
 }
   
