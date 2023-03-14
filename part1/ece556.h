@@ -107,16 +107,30 @@ int solveRouting(routingInst *rst);
   int writeOutput(const char *outRouteFile, routingInst *rst);
   
   /* int release(routingInst *rst)
-     Release the memory for all the allocated data structures. 
-     Failure to release may cause memory problems after multiple runs of your program. 
-     Need to recursively delete all memory allocations from bottom to top 
-     (starting from segments then routes then individual fields within a net struct, 
-     then nets, then the fields in a routing instance, and finally the routing instance)
+    Release the memory for all the allocated data structures. 
+    Failure to release may cause memory problems after multiple runs of your program. 
+    Need to recursively delete all memory allocations from bottom to top 
+    (starting from segments then routes then individual fields within a net struct, 
+    then nets, then the fields in a routing instance, and finally the routing instance)
 
-     output: 1 if successful, 0 otherwise 
+    output: 1 if successful, 0 otherwise 
   */
  int release(routingInst *rst);
 
+  /* int getEdgeID(int x1, int y1, int x2, int y2, int gx, int gx)
+    Provides the edge ID based on the cartesian end points of the grid.
+    Requries the two end points and grid size.
+    For the 3x3 grid, the edge IDs are as
+    (0,2) - 4 - (1,2) - 5 - (2,2)
+      |           |           |
+      9           10          11
+      |           |           |
+    (0,1) - 2 - (1,1) - 3 - (2,1)
+      |           |           |
+      6           7           8
+      |           |           |
+    (0,0) - 0 - (1,0) - 1 - (2,0)
+  */
+  int getEdgeID(int, int, int, int, int, int);
 
 #endif // ECE556_H
-
