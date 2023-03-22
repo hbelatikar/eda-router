@@ -5,7 +5,7 @@
 #include <string>
 #include <iostream>
 #include <sstream>
-#include <bits/stdc++.h>
+
 int readBenchmark(const char *fileName, routingInst *rst){
   std::ifstream input_file(fileName);
   if(input_file.is_open()){
@@ -20,8 +20,8 @@ int readBenchmark(const char *fileName, routingInst *rst){
         // Parse grid size and calculate num of edges
         stream >> rst->gx >> rst->gy;
         rst->numEdges = (rst->gx * (rst->gy - 1) + rst->gy * (rst->gx - 1));
-        rst->edgeCaps = (int*)malloc(rst->numEdges*sizeof(int));
-        rst->edgeUtils = (int*)malloc(rst->numEdges*sizeof(int));
+        rst->edgeCaps = new int[rst->numEdges];
+        rst->edgeUtils = new int[rst->numEdges];
       }
       else if (token == "capacity") {
         // Parse the default capacity
@@ -90,10 +90,11 @@ int readBenchmark(const char *fileName, routingInst *rst){
 }
 
 int solveRouting(routingInst *rst){
-  point P1, P2, currentNode, nextNode;           //points to store pins of the nets
-  int horizontalEdgesInSegment, verticalEdgesInSegment; //to store the edges in segments horizontal and vertical
+  point P1, P2, currentNode, nextNode;                  // Points to store pins of the nets
+  int horizontalEdgesInSegment, verticalEdgesInSegment; 
   int edgeIndex = -1;
-  int pinIndex = -1;           //number of pins of the net
+  int pinIndex = -1;           // Number of pins of the net
+  
   //Iterating through all the nets 
   for(int i=0; i<rst->numNets; i++) {  
     
@@ -105,14 +106,15 @@ int solveRouting(routingInst *rst){
     //Iterating through all the segments 
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       edgeIndex = 0;
+      
       //assigning x and y value of the net to the segment
-      P1.x = rst->nets[i].pins[pinIndex].x;
-      P1.y = rst->nets[i].pins[pinIndex].y;
+      P1 = rst->nets[i].pins[pinIndex];
       pinIndex++;
-      P2.x = rst->nets[i].pins[pinIndex].x;
-      P2.y = rst->nets[i].pins[pinIndex].y;
+      P2 = rst->nets[i].pins[pinIndex];
+
       rst->nets[i].nroute.segments[j].p1 = P1;
       rst->nets[i].nroute.segments[j].p2 = P2;
+      
       horizontalEdgesInSegment = std::abs(rst->nets[i].nroute.segments[j].p1.x - rst->nets[i].nroute.segments[j].p2.x);
       verticalEdgesInSegment = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
       rst->nets[i].nroute.segments[j].numEdges = horizontalEdgesInSegment + verticalEdgesInSegment;
@@ -121,25 +123,23 @@ int solveRouting(routingInst *rst){
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
       nextNode = currentNode;
+
+      // Traversing horizontally
       while(currentNode.x != P2.x) {
-        
         if(currentNode.x < P2.x)
 			    nextNode.x++;
 		    else
 			    nextNode.x--;
-
         rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
         currentNode = nextNode;
         edgeIndex++;
       }
-
+      // Traversing vertically
       while(currentNode.y != P2.y) {
-        
         if(currentNode.y < P2.y) 
 			    nextNode.y++;
 		    else
 			    nextNode.y--;
-        
         rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
         currentNode = nextNode;
         edgeIndex++;
@@ -150,11 +150,34 @@ int solveRouting(routingInst *rst){
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst){
-  /*********** TO BE FILLED BY YOU **********/
-
-  return 1;
+  
+  std::ofstream out_file(outRouteFile);
+  if(out_file.is_open()){
+    std::cout << "Nets: "<< rst->numNets << std::endl;
+    for(int i = 0; i < rst->numNets; i++){
+      out_file << "n" << rst->nets[i].id << std::endl;
+      for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
+        out_file << "Edge IDs: \n";
+        for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+          // Print p1
+          // out_file << "("<<rst->nets[i].nroute.segments[j].p1.x <<","<<rst->nets[i].nroute.segments[j].p1.y << ")";
+          // Print the seperator
+          // out_file << "-";
+          // Print p2
+          // out_file << "("<<rst->nets[i].nroute.segments[j].p2.x <<","<<rst->nets[i].nroute.segments[j].p2.y << ")" << std::endl;
+          out_file << rst->nets[i].nroute.segments[j].edges[k] << std::endl;
+        }
+      }
+      out_file << "!" << std::endl;
+    }
+    out_file.close();
+    return 1;
+  } else {  // Else if output file is not open
+    std::cout << "ERROR: Unable to write to output file.\n";
+    out_file.close();
+    return 0;
+  }
 }
-
 
 int release(routingInst *rst){
   free(rst->edgeCaps);
@@ -162,6 +185,8 @@ int release(routingInst *rst){
   free(rst->nets->pins);
   free(rst->nets);
   for(int i=0; i<rst->numNets; i++) {
+    for(int j = 0; j < rst->nets->nroute.numSegs; j++) 
+      free(rst->nets[i].nroute.segments[j].edges);
     free(rst->nets[i].nroute.segments);
   }
   return 1;
@@ -170,7 +195,7 @@ int release(routingInst *rst){
 int getEdgeID (int x1, int y1, int x2, int y2, int gx, int gy){
   if (y2 > y1)      return (y1*gx + (gx-1)*(gy) + x1); // P1 is below P2
   else if (y2 < y1) return (y2*gx + (gx-1)*(gy) + x1); // P1 is above P2
-  else if (x2 > x1) return (x1 + y1*(gx-1));               // P1 is left of P2
-  else if (x2 < x1) return (x2 + y1*(gx-1));               // P1 is right of P2
-  else              return -1;                                 // P1 and P2 are not adjacent
+  else if (x2 > x1) return (x1 + y1*(gx-1));           // P1 is left of P2
+  else if (x2 < x1) return (x2 + y1*(gx-1));           // P1 is right of P2
+  else              return -1;                         // P1 and P2 are not adjacent
 }
