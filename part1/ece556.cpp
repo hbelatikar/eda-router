@@ -90,88 +90,123 @@ int readBenchmark(const char *fileName, routingInst *rst){
 }
 
 int solveRouting(routingInst *rst){
-  point P1, P2;           //points to store pins of the nets
-  int num_pins=0;         //number of pins of the net
-  int HorizontalEdgesinsegment, VerticalEdgesinsegment; //to store the edges in segments horizontal and vertical
-  int temp=0;              //used to stop swap x and y coordinates for following a direction while traversing through for loop
-  //Iterating through all the nets 
-  for(int i=0; i<rst->numNets; i++)
-  {
-    //number of segments is number of pins given for a net minus 1
+//   point P1, P2;           //points to store pins of the nets
+//   int num_pins=0;         //number of pins of the net
+//   int HorizontalEdgesinsegment, VerticalEdgesinsegment; //to store the edges in segments horizontal and vertical
+//   int temp=0;              //used to stop swap x and y coordinates for following a direction while traversing through for loop
+//   //Iterating through all the nets 
+//   for(int i=0; i<rst->numNets; i++)
+//   {
+//     //number of segments is number of pins given for a net minus 1
+//     rst->nets[i].nroute.numSegs = rst->nets->numPins-1;
+//     rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
+//     //Iterating through all the segments 
+//     for(int y=0; y<rst->nets[i].nroute.numSegs; y++)
+//     {
+//       //assigning x and y value of the net to the segment
+//       P1.x = rst->nets[i].pins[num_pins].x;
+//       P1.y = rst->nets[i].pins[num_pins].y;
+//       num_pins++;
+//       P2.x = rst->nets[i].pins[num_pins].x;
+//       P2.y = rst->nets[i].pins[num_pins].y;
+//       if(P2.x>P1.x)
+//       {
+//         swappoints(P1.x, P2.x);
+//       }
+//       rst->nets[i].nroute.segments[y].p1 = P1;
+//       rst->nets[i].nroute.segments[y].p2 = P2;
+//       int *HorizontalEdgeIDinsegment = new int[HorizontalEdgesinsegment];
+//       int *VerticalEdgeIDinsegment = new int[VerticalEdgesinsegment];
+//       int *EdgeId = new int[HorizontalEdgesinsegment + VerticalEdgesinsegment];
+//       for(int z=rst->nets[i].nroute.segments[y].p1.x; z> rst->nets[i].nroute.segments[y].p2.x; z--)
+//       {
+//         HorizontalEdgeIDinsegment[z] = HorizontalEdgeID(rst->nets[i].nroute.segments[y].p1.x,rst->nets[i].nroute.segments[y].p1.y, rst->nets[i].nroute.segments[y].p2.x);
+//       }
+//       for(int z=rst->nets[i].nroute.segments[y].p1.y; z>= rst->nets[i].nroute.segments[y].p2.y; z--)
+//       {
+//         VerticalEdgeIDinsegment[z] = VerticalEdgeID(rst->nets[i].nroute.segments[y].p1.y,rst->nets[i].nroute.segments[y].p1.y, rst->nets[i].nroute.segments[y].p2.x);
+//       }
+//       rst->nets[i].nroute.segments->edges = EdgeId;
+//       HorizontalEdgesinsegment = absolute(rst->nets[i].nroute.segments[y].p1.x,rst->nets[i].nroute.segments[y].p2.x);
+//       VerticalEdgesinsegment = absolute(rst->nets[i].nroute.segments[y].p1.y,rst->nets[i].nroute.segments[y].p2.y);
+//       rst->nets[i].nroute.segments->numEdges = HorizontalEdgesinsegment + VerticalEdgesinsegment;
+//     }
+//   }
+  return 1;
+}
+// int HorizontalEdgeID(int p1x, int p1y, int p2x){
+//   return((rst->gx-1)*p1y + min(p1x, p2x));
+//   }
+// int absolute(int x, int y)
+// {
+//   if(x>y)
+//     return(x-y);
+//   else
+//     return(y-x);
+// }
+// int min(int x, int y)
+// {
+//   if(x<y)
+//     return x;
+//   else 
+//     return y;
+// }
+// int swappoints(int x, int y)
+// {
+//   int temp = 0;
+//     temp = x;
+//     x = y;
+//     y = temp;
+//     return(x,y);
+// }
+// int VerticalEdgeID(routingInst *rst, int p1x, int p1y, int p2x,int p2y){
+//   return((rst->gy*(rst->gx-1)) + min(p1y, p2y) + p1x);
+// }
+
+int writeOutput(const char *outRouteFile, routingInst *rst){
+  ///////////////// TEST /////////////////
+  for(int i = 0; i < rst->numNets; i++){
     rst->nets[i].nroute.numSegs = rst->nets->numPins-1;
     rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
-    //Iterating through all the segments 
-    for(int y=0; y<rst->nets[i].nroute.numSegs; y++)
-    {
-      //assigning x and y value of the net to the segment
-      P1.x = rst->nets[i].pins[num_pins].x;
-      P1.y = rst->nets[i].pins[num_pins].y;
-      num_pins++;
-      P2.x = rst->nets[i].pins[num_pins].x;
-      P2.y = rst->nets[i].pins[num_pins].y;
-      if(P2.x>P1.x)
-      {
-        swappoints(P1.x, P2.x);
+    for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
+      for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+        rst->nets[i].nroute.segments[j].p1.x = std::rand()*10;
+        rst->nets[i].nroute.segments[j].p1.x = std::rand()*10;
       }
-      rst->nets[i].nroute.segments[y].p1 = P1;
-      rst->nets[i].nroute.segments[y].p2 = P2;
-      int *HorizontalEdgeIDinsegment = new int[HorizontalEdgesinsegment];
-      int *VerticalEdgeIDinsegment = new int[VerticalEdgesinsegment];
-      int *EdgeId = new int[HorizontalEdgesinsegment + VerticalEdgesinsegment];
-      for(int z=rst->nets[i].nroute.segments[y].p1.x; z> rst->nets[i].nroute.segments[y].p2.x; z--)
-      {
-        HorizontalEdgeIDinsegment[z] = HorizontalEdgeID(rst->nets[i].nroute.segments[y].p1.x,rst->nets[i].nroute.segments[y].p1.y, rst->nets[i].nroute.segments[y].p2.x);
-      }
-      for(int z=rst->nets[i].nroute.segments[y].p1.y; z>= rst->nets[i].nroute.segments[y].p2.y; z--)
-      {
-        VerticalEdgeIDinsegment[z] = VerticalEdgeID(rst->nets[i].nroute.segments[y].p1.y,rst->nets[i].nroute.segments[y].p1.y, rst->nets[i].nroute.segments[y].p2.x);
-      }
-      rst->nets[i].nroute.segments->edges = EdgeId;
-      HorizontalEdgesinsegment = absolute(rst->nets[i].nroute.segments[y].p1.x,rst->nets[i].nroute.segments[y].p2.x);
-      VerticalEdgesinsegment = absolute(rst->nets[i].nroute.segments[y].p1.y,rst->nets[i].nroute.segments[y].p2.y);
-      rst->nets[i].nroute.segments->numEdges = HorizontalEdgesinsegment + VerticalEdgesinsegment;
     }
   }
-  return 1;
-}
-int HorizontalEdgeID(int p1x, int p1y, int p2x){
-  return((rst->gx-1)*p1y + min(p1x, p2x));
-  }
-int absolute(int x, int y)
-{
-  if(x>y)
-    return(x-y);
-  else
-    return(y-x);
-}
-int min(int x, int y)
-{
-  if(x<y)
-    return x;
-  else 
-    return y;
-}
-int swappoints(int x, int y)
-{
-  int temp = 0;
-    temp = x;
-    x = y;
-    y = temp;
-    return(x,y);
-}
-int VerticalEdgeID(routingInst *rst, int p1x, int p1y, int p2x,int p2y){
-  return((rst->gy*(rst->gx-1)) + min(p1y, p2y) + p1x);
-}
-int writeOutput(const char *outRouteFile, routingInst *rst){
-  /*********** TO BE FILLED BY YOU **********/
+  ///////////////// TEST /////////////////
 
-  return 1;
+  std::ofstream out_file(outRouteFile);
+  if(out_file.is_open()){
+    std::cout << "Nets: "<< rst->numNets << std::endl;
+    for(int i = 0; i < rst->numNets; i++){
+      out_file << "n" << rst->nets[i].id << std::endl;
+      for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
+        std::cout << "Segs: "<< rst->nets[i].nroute.numSegs << std::endl;
+        for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+          // Print p1
+          out_file << "("<<rst->nets[i].nroute.segments[j].p1.x <<","<<rst->nets[i].nroute.segments[j].p1.y << ")";
+          // Print the seperator
+          out_file << "-";
+          // Print p2
+          out_file << "("<<rst->nets[i].nroute.segments[j].p2.x <<","<<rst->nets[i].nroute.segments[j].p2.y << ")" << std::endl;
+        }
+      }
+      out_file << "!" << std::endl;
+    }
+    out_file.close();
+    return 1;
+  } else {  // Else if output file is not open
+    std::cout << "ERROR: Unable to write to output file.\n";
+    out_file.close();
+    return 0;
+  }
 }
 
 
 int release(routingInst *rst){
 
-  
   free(rst->edgeCaps);
   free(rst->edgeUtils);
   free(rst->nets->pins);
