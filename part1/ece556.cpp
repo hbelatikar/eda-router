@@ -31,7 +31,7 @@ int readBenchmark(const char *fileName, routingInst *rst){
       else if (token == "num") {
         // Parse all the number of nets
         stream >> token >> rst->numNets; 
-        rst->nets = (net*)malloc(rst->numNets*sizeof(net));
+        rst->nets = new net[rst->numNets];
         
         //Gather all net endpoints detail and net id
         for (int i = 0; i < rst->numNets; i++) {
@@ -40,7 +40,7 @@ int readBenchmark(const char *fileName, routingInst *rst){
           if(line[0] == 'n') {
             net_stream >> token >> rst->nets[i].numPins;
             rst->nets[i].id = stoi(token.substr(1,token.size()-1));
-            rst->nets[i].pins = (point*)malloc(rst->nets[i].numPins*sizeof(point));
+            rst->nets[i].pins = new point[rst->nets[i].numPins];
             for (int j = 0; j < rst->nets[i].numPins; j++) {
               std::getline(input_file,line);
               std::stringstream net_stream(line);
@@ -188,16 +188,22 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
 }
 
 int release(routingInst *rst){
-  free(rst->edgeCaps);
-  free(rst->edgeUtils);
-  for(int i=0; i<rst->numNets; i++) {
-    for(int j = 0; j < rst->nets->nroute.numSegs; j++) {
-      free(rst->nets[i].nroute.segments);
+  if(rst->nets != NULL){
+    for(int i=0; i<rst->numNets; i++) {
+      if(rst->nets->nroute.segments != NULL) {
+        for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
+          if(rst->nets[i].nroute.segments[j].edges != NULL) {
+            delete rst->nets[i].nroute.segments[j].edges;  
+          }
+        }
+        delete rst->nets[i].nroute.segments;
+      }
+      delete rst->nets[i].pins;
     }
   }
-  free(rst->nets->pins);
-  free(rst->nets);
-  free(rst);
+  delete rst->nets;
+  delete rst->edgeCaps;
+  delete rst->edgeUtils;
   return 1;
 }
   
