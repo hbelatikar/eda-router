@@ -150,22 +150,19 @@ int solveRouting(routingInst *rst){
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst){
-  
+  point *P;
   std::ofstream out_file(outRouteFile);
   if(out_file.is_open()){
     std::cout << "Nets: "<< rst->numNets << std::endl;
     for(int i = 0; i < rst->numNets; i++){
       out_file << "n" << rst->nets[i].id << std::endl;
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
-        out_file << "Edge IDs: \n";
         for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-          // Print p1
-          // out_file << "("<<rst->nets[i].nroute.segments[j].p1.x <<","<<rst->nets[i].nroute.segments[j].p1.y << ")";
-          // Print the seperator
-          // out_file << "-";
-          // Print p2
-          // out_file << "("<<rst->nets[i].nroute.segments[j].p2.x <<","<<rst->nets[i].nroute.segments[j].p2.y << ")" << std::endl;
-          out_file << rst->nets[i].nroute.segments[j].edges[k] << std::endl;
+          P = revEdgeID(rst->nets[i].nroute.segments[j].edges[k], rst->gx, rst->gy); 
+          // Print points as per specification
+          out_file <<rst->nets[i].nroute.segments[j].edges[k]<< ": ("<< P[0].x <<","<< P[0].y << ")";
+          out_file << "-";
+          out_file << "(" << P[1].x <<","<< P[1].y << ")" << std::endl;
         }
       }
       out_file << "!" << std::endl;
@@ -184,18 +181,41 @@ int release(routingInst *rst){
   free(rst->edgeUtils);
   free(rst->nets->pins);
   free(rst->nets);
-  for(int i=0; i<rst->numNets; i++) {
-    for(int j = 0; j < rst->nets->nroute.numSegs; j++) 
-      free(rst->nets[i].nroute.segments[j].edges);
-    free(rst->nets[i].nroute.segments);
-  }
+  // for(int i=0; i<rst->numNets; i++) {
+    // for(int j = 0; j < rst->nets->nroute.numSegs; j++) {
+      // for (int k = 0; k < rst->nets->nroute.segments[j].numEdges; k++){
+      //   free(rst->nets[i].nroute.segments[j].edges);
+      // }
+      // free(rst->nets[i].nroute.segments);
+    // }
+  // }
   return 1;
 }
   
 int getEdgeID (int x1, int y1, int x2, int y2, int gx, int gy){
-  if (y2 > y1)      return (y1*gx + (gx-1)*(gy) + x1); // P1 is below P2
-  else if (y2 < y1) return (y2*gx + (gx-1)*(gy) + x1); // P1 is above P2
-  else if (x2 > x1) return (x1 + y1*(gx-1));           // P1 is left of P2
-  else if (x2 < x1) return (x2 + y1*(gx-1));           // P1 is right of P2
-  else              return -1;                         // P1 and P2 are not adjacent
+  if      (y1 != y2) return (std::min(y1,y2) * gx + (gx-1) * (gy) + x1); // Points are vertical
+  else if (x1 != x2) return (std::min(x1,x2) + y1 * (gx-1)); // Points are horizontal
+  else return -1; // Points are not adjacent
+}
+
+point* revEdgeID(int edgeID, int gx, int gy){
+  static point endPoints[2]; //Store the 2 endpoints here
+  int edgeDiff = (((gx-1) * gy) - 1) - edgeID; // Calculate the edge diffrence with the max horizontal edge
+  if(edgeDiff < 0) {
+    edgeDiff = std::abs(edgeDiff);
+    // This is a vertical edge
+    endPoints[0].x = endPoints[1].x = (edgeDiff-1)%(gx);  // P1.x = P2.x -> Extra edges after the x-axis
+    endPoints[0].y = (edgeDiff/(gx+1)); // Y cord based on how many V edges are present through x axis 
+    endPoints[1].y = endPoints[0].y + 1;
+  } else if (edgeDiff >= 0){
+    // This is a horizontal edges
+    endPoints[0].x = edgeID%(gx-1);
+    endPoints[1].x = endPoints[0].x + 1;
+    endPoints[0].y = endPoints[1].y = (edgeID)/(gx - 1);  // P1.y = P2.y
+  } else {
+    // Error in input
+    endPoints[0].x = endPoints[1].x = -1;
+    endPoints[0].y = endPoints[1].y = -1;
+  }
+  return endPoints;
 }

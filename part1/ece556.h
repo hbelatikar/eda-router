@@ -133,4 +133,10 @@ int solveRouting(routingInst *rst);
   */
   int getEdgeID(int, int, int, int, int, int);
 
+  /* point* revEdgeID(int edgeID)
+    Reverses the edge ID and returns the two endpoints of the edge
+    Second Point of array is always right of or above first Point
+  */
+ point* revEdgeID(int, int, int);
+
 #endif // ECE556_H
