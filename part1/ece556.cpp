@@ -150,20 +150,31 @@ int solveRouting(routingInst *rst){
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst){
-  point *P;
+  point *edge1;
+  point printPoints[2];
+  int prevEdgeID;
   std::ofstream out_file(outRouteFile);
   if(out_file.is_open()){
-    std::cout << "Nets: "<< rst->numNets << std::endl;
     for(int i = 0; i < rst->numNets; i++){
       out_file << "n" << rst->nets[i].id << std::endl;
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
+        prevEdgeID = -1;
         for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-          P = revEdgeID(rst->nets[i].nroute.segments[j].edges[k], rst->gx, rst->gy); 
-          // Print points as per specification
-          out_file <<rst->nets[i].nroute.segments[j].edges[k]<< ": ("<< P[0].x <<","<< P[0].y << ")";
-          out_file << "-";
-          out_file << "(" << P[1].x <<","<< P[1].y << ")" << std::endl;
+          edge1 = revEdgeID(rst->nets[i].nroute.segments[j].edges[k], rst->gx, rst->gy); 
+          if( prevEdgeID == -1) {
+            printPoints[0] = edge1[0];
+            printPoints[1] = edge1[1];
+          } else if ((rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + 1)  &&  
+                     (rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + rst->gx)) {
+            writePtToFile(out_file, printPoints);
+            printPoints[0] = edge1[0];
+            printPoints[1] = edge1[1];
+          } else {
+            printPoints[1] = edge1[1];
+          }
+          prevEdgeID = rst->nets[i].nroute.segments[j].edges[k];
         }
+        writePtToFile(out_file, printPoints);
       }
       out_file << "!" << std::endl;
     }
@@ -179,16 +190,14 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
 int release(routingInst *rst){
   free(rst->edgeCaps);
   free(rst->edgeUtils);
+  for(int i=0; i<rst->numNets; i++) {
+    for(int j = 0; j < rst->nets->nroute.numSegs; j++) {
+      free(rst->nets[i].nroute.segments);
+    }
+  }
   free(rst->nets->pins);
   free(rst->nets);
-  // for(int i=0; i<rst->numNets; i++) {
-    // for(int j = 0; j < rst->nets->nroute.numSegs; j++) {
-      // for (int k = 0; k < rst->nets->nroute.segments[j].numEdges; k++){
-      //   free(rst->nets[i].nroute.segments[j].edges);
-      // }
-      // free(rst->nets[i].nroute.segments);
-    // }
-  // }
+  free(rst);
   return 1;
 }
   
@@ -218,4 +227,11 @@ point* revEdgeID(int edgeID, int gx, int gy){
     endPoints[0].y = endPoints[1].y = -1;
   }
   return endPoints;
+}
+
+void writePtToFile (std::ofstream &outFile, point *P){
+  // Print points as per specification
+  outFile << "(" << P[0].x <<","<< P[0].y << ")";
+  outFile << "-";
+  outFile << "(" << P[1].x <<","<< P[1].y << ")" << std::endl;
 }

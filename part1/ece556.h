@@ -5,6 +5,7 @@
 #define ECE556_H
 
 #include <stdio.h>
+#include <fstream>
 
  /**
   * A structure to represent a 2D Point. 
@@ -137,6 +138,12 @@ int solveRouting(routingInst *rst);
     Reverses the edge ID and returns the two endpoints of the edge
     Second Point of array is always right of or above first Point
   */
- point* revEdgeID(int, int, int);
+  point* revEdgeID(int, int, int);
+
+  /* void writePtToFile(ofstream &, point);
+      Write a point to the file pointer according
+      to the project requirement
+  */
+  void writePtToFile(std::ofstream &, point *);
 
 #endif // ECE556_H
