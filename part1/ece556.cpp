@@ -150,29 +150,42 @@ int solveRouting(routingInst *rst){
 }
 
 int writeOutput(const char *outRouteFile, routingInst *rst){
-  point *edge1;
-  point printPoints[2];
-  int prevEdgeID;
+  //point *edge1;
+  point printPoints[1];
+  int prevEdgeID, currentEdgeID, edgeDifference;
   std::ofstream out_file(outRouteFile);
   if(out_file.is_open()){
     for(int i = 0; i < rst->numNets; i++){
       out_file << "n" << rst->nets[i].id << std::endl;
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
-        prevEdgeID = -1;
-        for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-          edge1 = revEdgeID(rst->nets[i].nroute.segments[j].edges[k], rst->gx, rst->gy); 
-          if( prevEdgeID == -1) {
-            printPoints[0] = edge1[0];
-            printPoints[1] = edge1[1];
-          } else if ((rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + 1)  &&  
-                     (rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + rst->gx)) {
-            writePtToFile(out_file, printPoints);
-            printPoints[0] = edge1[0];
-            printPoints[1] = edge1[1];
-          } else {
-            printPoints[1] = edge1[1];
-          }
-          prevEdgeID = rst->nets[i].nroute.segments[j].edges[k];
+        prevEdgeID = rst->nets[i].nroute.segments[j].edges[0];
+        printPoints[0]= rst->nets[i].nroute.segments[j].p1;
+        printPoints[1] = nextPoint(printPoints[0], prevEdgeID, rst);
+        for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+          currentEdgeID = rst->nets[i].nroute.segments[j].edges[k];
+          edgeDifference = std::abs(currentEdgeID - prevEdgeID);
+					//Check if the next edge is the bend then assign the pivot as the next startpoint
+					if (edgeDifference != 1 && edgeDifference != rst->gx)
+					{
+		        writePtToFile(out_file, printPoints);
+						printPoints[0] = printPoints[1];
+					}
+					//If its a stright edge find the end point
+					printPoints[1] = nextPoint(printPoints[1], currentEdgeID, rst);
+					prevEdgeID = currentEdgeID;
+          // edge1 = revEdgeID(rst->nets[i].nroute.segments[j].edges[k], rst->gx, rst->gy, rst); 
+          // if( prevEdgeID == -1) {
+          //   printPoints[0] = edge1[0];
+          //   printPoints[1] = edge1[1];
+          // } else if ((rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + 1)  &&  
+          //            (rst->nets[i].nroute.segments[j].edges[k] != prevEdgeID + rst->gx)) {
+          //   writePtToFile(out_file, printPoints);
+          //   printPoints[0] = edge1[0];
+          //   printPoints[1] = edge1[1];
+          // } else {
+          //   printPoints[1] = edge1[1];
+          // }
+          // prevEdgeID = rst->nets[i].nroute.segments[j].edges[k];
         }
         writePtToFile(out_file, printPoints);
       }
@@ -212,21 +225,71 @@ int getEdgeID (int x1, int y1, int x2, int y2, int gx, int gy){
   else if (x1 != x2) return (std::min(x1,x2) + y1 * (gx-1)); // Points are horizontal
   else return -1; // Points are not adjacent
 }
-
-point* revEdgeID(int edgeID, int gx, int gy){
+point nextPoint(point p1, int edgeid, routingInst *rst)
+{
+  //If the given edge is the horizontal edge
+	if(edgeid < ((rst->gx - 1) * rst->gy))
+	{	
+		//if the edge is going right or the left direction 
+		point leftSidePoint = {p1.x - 1, p1.y};
+		point rightSidePoint = {p1.x + 1, p1.y};
+		if(getEdgeID(p1.x, p1.y, leftSidePoint.x, leftSidePoint.y, rst->gx, rst->gy) == edgeid)
+		{
+			return(leftSidePoint);
+		}
+		else if(getEdgeID(p1.x, p1.y, rightSidePoint.x, rightSidePoint.y, rst->gx, rst->gy) == edgeid)
+		{
+			return(rightSidePoint);
+		}
+	}
+	//If the given edge is the vertical edge
+	else {
+		//Find if the edge is going top or the bottom
+		point bottomPoint = {p1.x, p1.y - 1};
+		point topPoint = {p1.x, p1.y + 1};
+		if(getEdgeID(p1.x, p1.y, bottomPoint.x, bottomPoint.y, rst->gx, rst->gy) == edgeid)
+		{
+			return(bottomPoint);
+		}
+		else if(getEdgeID(p1.x, p1.y, topPoint.x, topPoint.y, rst->gx, rst->gy) == edgeid)
+		{
+			return(topPoint);
+		}
+	}
+}
+point* revEdgeID(int edgeID, int gx, int gy, routingInst *rst){
   static point endPoints[2]; //Store the 2 endpoints here
+  int bottom, up, left, right;
   int edgeDiff = (((gx-1) * gy) - 1) - edgeID; // Calculate the edge diffrence with the max horizontal edge
+  up = endPoints[0].y + 1;
+  bottom = endPoints[0].y - 1;
   if(edgeDiff < 0) {
     edgeDiff = std::abs(edgeDiff);
     // This is a vertical edge
     endPoints[0].x = endPoints[1].x = (edgeDiff-1)%(gx);  // P1.x = P2.x -> Extra edges after the x-axis
     endPoints[0].y = (edgeDiff/(gx+1)); // Y cord based on how many V edges are present through x axis 
-    endPoints[1].y = endPoints[0].y + 1;
+    if(getEdgeID(endPoints[0].x,endPoints[0].y,endPoints[1].x, up, rst->gx,rst->gy)==edgeID)
+    {
+      endPoints[1].y = endPoints[0].y + 1;
+    }
+    else if(getEdgeID(endPoints[0].x,endPoints[0].y,endPoints[1].x, bottom, rst->gx,rst->gy)==edgeID)
+    {
+      endPoints[1].y = endPoints[0].y - 1;
+    }
   } else if (edgeDiff >= 0){
     // This is a horizontal edges
     endPoints[0].x = edgeID%(gx-1);
-    endPoints[1].x = endPoints[0].x + 1;
     endPoints[0].y = endPoints[1].y = (edgeID)/(gx - 1);  // P1.y = P2.y
+    left = endPoints[0].x - 1;
+    right = endPoints[0].x + 1;
+    if(getEdgeID(endPoints[0].x,endPoints[0].y, right, up, rst->gx,rst->gy)==edgeID)
+    {
+      endPoints[1].x = endPoints[0].x + 1;
+    }
+    else if(getEdgeID(endPoints[0].x,endPoints[0].y, left , bottom, rst->gx,rst->gy)==edgeID)
+    {
+      endPoints[1].x = endPoints[0].x - 1;
+    }
   } else {
     // Error in input
     endPoints[0].x = endPoints[1].x = -1;
