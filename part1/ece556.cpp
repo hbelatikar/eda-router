@@ -247,7 +247,6 @@ point nextPoint(point p1, int edgeID, routingInst *rst) {
 			ptToReturn = bottomPoint;
 		}
 		else if(getEdgeID(p1.x, p1.y, topPoint.x, topPoint.y, rst->gx, rst->gy) == edgeID) {
-			return(topPoint);
       ptToReturn = topPoint;
 		}
 	}
