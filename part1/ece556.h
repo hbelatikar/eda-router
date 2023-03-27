@@ -26,7 +26,7 @@
    point p1 ; 	/* start point of a segment */
    point p2 ; 	/* end point of a segment */
    
-   int numEdges ; 	/* number of edges in the segment*/
+   int numEdges ; /* number of edges in the segment*/
    int *edges ;  	/* array of edges representing the segment*/
    
  } segment ;
@@ -134,12 +134,11 @@ int solveRouting(routingInst *rst);
   */
   int getEdgeID(int, int, int, int, int, int);
 
-  /* point* revEdgeID(int edgeID)
-    Reverses the edge ID and returns the two endpoints of the edge
-    Second Point of array is always right of or above first Point
+  /* point nextPoint(point, int, routingInst*)
+    
   */
-  point* revEdgeID(int, int, int, routingInst *rst);
-  point nextPoint(point , int, routingInst *rst);
+  point nextPoint(point , int, routingInst *);
+  
   /* void writePtToFile(ofstream &, point);
       Write a point to the file pointer according
       to the project requirement
