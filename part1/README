@@ -1,0 +1,15 @@
+Team : Pani Puri
+Team Members: 
+    Rahimullah Shaikh
+    Hrishikesh Belatikar
+
+Responsibilities:
+Hrishikesh :
+    1) Developed function release(), readBenchmark(), writeOutput()
+    2) Developed function getEdgeID
+    3) Developed Makefile 
+    4) Code Maintenance
+Rahimullah :
+    1) Developed logic and code for solveRouting()
+    2) Developed function nextPoint()
+    3) Code Maintenance

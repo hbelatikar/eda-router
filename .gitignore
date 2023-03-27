@@ -63,3 +63,7 @@ core
 # IO Files
 *.txt
 *.gr
+
+# Tar Files
+*.tar
+*.tar.gz
