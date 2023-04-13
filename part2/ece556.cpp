@@ -1,9 +1,7 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
-#include <fstream>
 #include <string>
-#include <iostream>
 #include <sstream>
 
 int readBenchmark(const char *fileName, routingInst *rst){

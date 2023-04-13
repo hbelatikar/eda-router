@@ -1,6 +1,7 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
+#include <chrono>
 
 int main(int argc, char **argv)
 {
@@ -20,29 +21,49 @@ int main(int argc, char **argv)
  	routingInst *rst = new routingInst;
 	
  	/// read benchmark
- 	status = readBenchmark(inputFileName, rst);
- 	if(status==0) {
+ 	auto start = std::chrono::high_resolution_clock::now();
+	status = readBenchmark(inputFileName, rst);
+	auto stop = std::chrono::high_resolution_clock::now();
+	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout << "Read Benchmark Time : " << duration.count() << "ms \n";
+ 	
+	if(status==0) {
  		printf("ERROR: reading input file \n");
  		return 1;
  	}
 	
  	/// run actual routing
+ 	start = std::chrono::high_resolution_clock::now();
  	status = solveRouting(rst);
- 	if(status==0) {
+	stop = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout << "Solve Time : " << duration.count() << "ms \n";
+ 	
+	if(status==0) {
  		printf("ERROR: running routing \n");
  		release(rst);
  		return 1;
  	}
 	
  	/// write the result
+ 	start = std::chrono::high_resolution_clock::now();
  	status = writeOutput(outputFileName, rst);
- 	if(status==0) {
+	stop = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout << "Write Output Time : " << duration.count() << "ms \n";
+ 	
+	if(status==0) {
  		printf("ERROR: writing the result \n");
  		release(rst);
  		return 1;
  	}
 
+ 	start = std::chrono::high_resolution_clock::now();
  	release(rst);
- 	printf("\nDONE!\n");	
+	stop = std::chrono::high_resolution_clock::now();
+	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	std::cout << "Release Time : " << duration.count() << "ms \n";
+ 	
+	printf("\nDONE!\n");	
  	return 0;
 }

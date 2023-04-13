@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <fstream>
+#include <iostream>
 
  /**
   * A structure to represent a 2D Point. 
