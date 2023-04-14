@@ -145,5 +145,11 @@ int solveRouting(routingInst *rst);
       to the project requirement
   */
   void writePtToFile(std::ofstream &, point *);
-
+  
+  /* int netDecompose(routingInst *);
+     Decomposes the net points and swaps the position of 
+     points so that the two points are the closest to 
+     each other 
+  */
+  int netDecompose(routingInst *);
 #endif // ECE556_H

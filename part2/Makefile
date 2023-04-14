@@ -48,4 +48,4 @@ all: ROUTE.exe
 .PHONY: execute
 
 execute: ROUTE.exe
-	./ROUTE.exe -d=0 -n=0 ../benchmarks/adaptec1.gr out.txt
+	./ROUTE.exe -d=0 -n=0 ../benchmarks/in.gr out.txt

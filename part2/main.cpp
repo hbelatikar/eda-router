@@ -12,7 +12,8 @@ int main(int argc, char **argv)
  	}
 
  	int status;
-	char *subnet_gen = argv[1];
+	u_int32_t totalTime = 0;
+	char *subnetGen = argv[1];
 	char *rrr = argv[2];
 	char *inputFileName = argv[3];
  	char *outputFileName = argv[4];
@@ -20,23 +21,41 @@ int main(int argc, char **argv)
  	/// create a new routing instance
  	routingInst *rst = new routingInst;
 	
- 	/// read benchmark
- 	auto start = std::chrono::high_resolution_clock::now();
+ 	/// Time the read benchmark function
+ 	std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
 	status = readBenchmark(inputFileName, rst);
-	auto stop = std::chrono::high_resolution_clock::now();
-	auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-	std::cout << "Read Benchmark Time : " << duration.count() << "ms \n";
+	std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
+	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	totalTime += duration.count();
+	std::cout << std::endl << "Read Benchmark Time : " << duration.count() << "ms \n";
  	
 	if(status==0) {
  		printf("ERROR: reading input file \n");
  		return 1;
  	}
 	
+	/// Decompose net
+	if (subnetGen[3]=='1') {
+		// Time the netDecompose function
+		start = std::chrono::high_resolution_clock::now();
+		status = netDecompose(rst);
+		stop = std::chrono::high_resolution_clock::now();
+		duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+		totalTime += duration.count();
+		std::cout << "Net Decompose Time : " << duration.count() << "ms \n";
+		
+		if(status==0) {
+			printf("ERROR: Net decomposing failed \n");
+			return 1;
+ 		}		
+	}
+
  	/// run actual routing
  	start = std::chrono::high_resolution_clock::now();
  	status = solveRouting(rst);
 	stop = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+	totalTime += duration.count();
 	std::cout << "Solve Time : " << duration.count() << "ms \n";
  	
 	if(status==0) {
@@ -45,12 +64,20 @@ int main(int argc, char **argv)
  		return 1;
  	}
 	
+	/// Rip up and Reroute
+	if (rrr[3]=='1')
+	{
+		//Perform RRR
+	}
+	
+
  	/// write the result
  	start = std::chrono::high_resolution_clock::now();
  	status = writeOutput(outputFileName, rst);
 	stop = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 	std::cout << "Write Output Time : " << duration.count() << "ms \n";
+	totalTime += duration.count();
  	
 	if(status==0) {
  		printf("ERROR: writing the result \n");
@@ -63,7 +90,9 @@ int main(int argc, char **argv)
 	stop = std::chrono::high_resolution_clock::now();
 	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
 	std::cout << "Release Time : " << duration.count() << "ms \n";
+	totalTime += duration.count();
  	
 	printf("\nDONE!\n");	
- 	return 0;
+ 	std::cout << std::endl << "Total Time : " << totalTime <<"ms \n";
+	return 0;
 }

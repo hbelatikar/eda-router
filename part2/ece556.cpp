@@ -257,3 +257,20 @@ void writePtToFile (std::ofstream &outFile, point *P){
   outFile << "-";
   outFile << "(" << P[1].x <<","<< P[1].y << ")" << std::endl;
 }
+
+int netDecompose (routingInst* rst) {
+  int manDist = 0;  // Manhattan distance between two points
+
+  // Iterate through all nets
+  for(int i = 0; i < rst->numNets; i++){
+    // Iterate through all net pins if number of pins > 2
+    if(rst->nets[i].numPins > 2) {
+      for(int j = 0; j < rst->nets[i].numPins; j+=2) {
+        // Find Manhattan distance between the first 2 points
+        manDist = std::abs( (rst->nets[i].pins[j+1].x) - (rst->nets[i].pins[j].x) ) + 
+                  std::abs( (rst->nets[i].pins[j+1].y) - (rst->nets[i].pins[j].y) ) ;
+      }
+    }
+  }
+  return 1;
+}
