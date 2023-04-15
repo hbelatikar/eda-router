@@ -69,7 +69,6 @@ int main(int argc, char **argv)
 	{
 		//Perform RRR
 	}
-	
 
  	/// write the result
  	start = std::chrono::high_resolution_clock::now();
