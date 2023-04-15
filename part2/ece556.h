@@ -152,4 +152,8 @@ int solveRouting(routingInst *rst);
      each other 
   */
   int netDecompose(routingInst *);
+
+  int manDist(const void *, const void *);
+
+  int compareX(const void *, const void *);
 #endif // ECE556_H
