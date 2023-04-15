@@ -94,7 +94,7 @@ int solveRouting(routingInst *rst){
   int horizontalEdgesInSegment, verticalEdgesInSegment; 
   int edgeIndex = -1;
   int pinIndex = -1;           // Number of pins of the net
-  
+  int loopIndex = -1;
   //Iterating through all the nets 
   for(int i=0; i<rst->numNets; i++) {  
     
@@ -102,11 +102,10 @@ int solveRouting(routingInst *rst){
     //Number of segments = Number of pins - 1
     rst->nets[i].nroute.numSegs = rst->nets[i].numPins-1;
     rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
-    
+    loopIndex = 0;
     //Iterating through all the segments 
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       edgeIndex = 0;
-      
       //assigning x and y value of the net to the segment
       P1 = rst->nets[i].pins[pinIndex];
       pinIndex++;
@@ -119,30 +118,62 @@ int solveRouting(routingInst *rst){
       verticalEdgesInSegment = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
       rst->nets[i].nroute.segments[j].numEdges = horizontalEdgesInSegment + verticalEdgesInSegment;
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets[i].nroute.segments[j].numEdges];
-      
+      rst->edgeUtils = new int [rst->numEdges];
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
       nextNode = currentNode;
-
-      // Traversing horizontally
-      while(currentNode.x != P2.x) {
-        if(currentNode.x < P2.x)
-			    nextNode.x++;
-		    else
-			    nextNode.x--;
-        rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
-        currentNode = nextNode;
-        edgeIndex++;
+      //even odd implementation
+      if(loopIndex%2==0)
+      {
+        // Traversing horizontally first
+        while(currentNode.x != P2.x) {
+          if(currentNode.x < P2.x)
+            nextNode.x++;
+          else
+            nextNode.x--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
+          rst->edgeUtils[edgeIndex]++;
+          currentNode = nextNode;
+          edgeIndex++;
+        }
+        // Traversing vertically
+        while(currentNode.y != P2.y) {
+          if(currentNode.y < P2.y) 
+            nextNode.y++;
+          else
+            nextNode.y--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->edgeUtils[edgeIndex]++;
+          currentNode = nextNode;
+          edgeIndex++;
+        }
+        loopIndex++;
       }
-      // Traversing vertically
-      while(currentNode.y != P2.y) {
-        if(currentNode.y < P2.y) 
-			    nextNode.y++;
-		    else
-			    nextNode.y--;
-        rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
-        currentNode = nextNode;
-        edgeIndex++;
+      else 
+      {
+        // Traversing vertically first
+        while(currentNode.y != P2.y) {
+          if(currentNode.y < P2.y) 
+            nextNode.y++;
+          else
+            nextNode.y--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->edgeUtils[edgeIndex]++;
+          currentNode = nextNode;
+          edgeIndex++;
+        }
+        // Traversing horizontally
+        while(currentNode.x != P2.x) {
+          if(currentNode.x < P2.x)
+            nextNode.x++;
+          else
+            nextNode.x--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
+          rst->edgeUtils[edgeIndex]++;
+          currentNode = nextNode;
+          edgeIndex++;
+        }
+        loopIndex++;
       }
     } 
   }
