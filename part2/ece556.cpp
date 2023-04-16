@@ -25,6 +25,7 @@ int readBenchmark(const char *fileName, routingInst *rst){
         // Parse the default capacity
         stream >> rst->cap;
         std::fill_n(rst->edgeCaps,rst->numEdges,rst->cap);
+        std::fill_n(rst->edgeUtils,rst->numEdges,0);
       }
       else if (token == "num") {
         // Parse all the number of nets
@@ -89,10 +90,10 @@ int readBenchmark(const char *fileName, routingInst *rst){
 
 int solveRouting(routingInst *rst){
   point P1, P2, currentNode, nextNode;                  // Points to store pins of the nets
-  int horizontalEdgesInSegment, verticalEdgesInSegment; 
+  int hEdgesInSeg, vEdgesInSeg; 
   int edgeIndex = -1;
   int pinIndex = -1;           // Number of pins of the net
-  int loopIndex = -1;
+
   //Iterating through all the nets 
   for(int i=0; i<rst->numNets; i++) {  
     
@@ -100,7 +101,6 @@ int solveRouting(routingInst *rst){
     //Number of segments = Number of pins - 1
     rst->nets[i].nroute.numSegs = rst->nets[i].numPins-1;
     rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
-    loopIndex = 0;
     //Iterating through all the segments 
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       edgeIndex = 0;
@@ -112,44 +112,40 @@ int solveRouting(routingInst *rst){
       rst->nets[i].nroute.segments[j].p1 = P1;
       rst->nets[i].nroute.segments[j].p2 = P2;
       
-      horizontalEdgesInSegment = std::abs(rst->nets[i].nroute.segments[j].p1.x - rst->nets[i].nroute.segments[j].p2.x);
-      verticalEdgesInSegment = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
-      rst->nets[i].nroute.segments[j].numEdges = horizontalEdgesInSegment + verticalEdgesInSegment;
+      hEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.x - rst->nets[i].nroute.segments[j].p2.x);
+      vEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
+      rst->nets[i].nroute.segments[j].numEdges = hEdgesInSeg + vEdgesInSeg;
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeUtils = new int [rst->numEdges];
+      
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
       nextNode = currentNode;
-      //even odd implementation
-      if(loopIndex%2==0)
-      {
-        // Traversing horizontally first
-      while(currentNode.x != P2.x) {
-        if(currentNode.x < P2.x)
-			    nextNode.x++;
-		    else
-			    nextNode.x--;
-        rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
-        rst->edgeUtils[edgeIndex]++;
-        currentNode = nextNode;
-        edgeIndex++;
-      }
-      // Traversing vertically
-      while(currentNode.y != P2.y) {
-        if(currentNode.y < P2.y) 
-			    nextNode.y++;
-		    else
-			    nextNode.y--;
-        rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+      // Even-Odd implementation
+      if (j%2==0) {
+        // If loop index is even traverse horizontally first
+        while(currentNode.x != P2.x) {
+          if(currentNode.x < P2.x)
+            nextNode.x++;
+          else
+            nextNode.x--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
           rst->edgeUtils[edgeIndex]++;
           currentNode = nextNode;
           edgeIndex++;
         }
-        loopIndex++;
-      }
-      else 
-      {
-        // Traversing vertically first
+        // Traversing vertically
+        while(currentNode.y != P2.y) {
+          if(currentNode.y < P2.y) 
+            nextNode.y++;
+          else
+            nextNode.y--;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->edgeUtils[edgeIndex]++;
+          currentNode = nextNode;
+          edgeIndex++;
+        }
+      } else {
+        // Else if loop index is odd traverse vertically first
         while(currentNode.y != P2.y) {
           if(currentNode.y < P2.y) 
             nextNode.y++;
@@ -166,12 +162,11 @@ int solveRouting(routingInst *rst){
             nextNode.x++;
           else
             nextNode.x--;
-          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);;
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
           rst->edgeUtils[edgeIndex]++;
         currentNode = nextNode;
         edgeIndex++;
-      }
-        loopIndex++;
+        }
       }
     } 
   }
@@ -290,25 +285,60 @@ void writePtToFile (std::ofstream &outFile, point *P){
 }
 
 int netDecompose (routingInst* rst) {
-  // Code referred from https://www.tutorialspoint.com/c_standard_library/c_function_qsort.htm
+  
+  int minManDist, calcManDist;
 
   // Iterate through all nets
   for(int i = 0; i < rst->numNets; i++){
-    // Quicksort the nets according to the manhattan distance
-    // qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), manDist);
-    qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareX);
+    if (rst->nets[i].numPins > 2) {
+      if(i&1) {
+        // If iterator is odd quicksort the nets according to the X axis
+        qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareX);
+      } else {
+        // Quicksort the nets according to the Y axis
+        qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareY);
+      }
+      
+      // BRUTE FORCE THE SOLUTION
+      // TODO: Find a better approach than Bubble
+      minManDist = manDist(rst->nets[i].pins[0], rst->nets[i].pins[1]);
+
+      // Go through all the pins to calc the manDist
+      for (int j = 0; j < rst->nets[i].numPins - 1; j++){
+        for (int k = 0; k < rst->nets[i].numPins - j - 1; k++){
+          calcManDist = manDist(rst->nets[i].pins[k], rst->nets[i].pins[k+1]);
+          if (calcManDist < minManDist){
+            minManDist = calcManDist;
+            std::swap(rst->nets[i].pins[k], rst->nets[i].pins[k+1]);
+          }
+        }
+      }
+    }
+    
+    // DEBUG ONLY //
+    // std::cout << "net: n" << rst->nets[i].id << " numPins: " << rst->nets[i].numPins << std::endl;
+    
+    // for (int z = 0 ; z < rst->nets[i].numPins; z++) {
+    //   std::cout << "(" << rst->nets[i].pins[z].x << "," << rst->nets[i].pins[z].y << ")\n";
+    // }
+    // DEBUG ONLY ENDS //
+
   }
   return 1;
 }
 
-int manDist (const void *a, const void *b){
-  point *p1 = (point *) a;
-  point *p2 = (point *) b;
-  return (std::abs((p2->x) - (p1->x)) + std::abs((p2->y) - (p1->y)));
+int manDist (point p1, point p2){
+  return (std::abs((p2.x) - (p1.x)) + std::abs((p2.y) - (p1.y)));
 }
 
 int compareX (const void *a, const void *b){
   point *p1 = (point *) a;
   point *p2 = (point *) b;
   return ((p1->x) - (p2->x));
+}
+
+int compareY (const void *a, const void *b){
+  point *p1 = (point *) a;
+  point *p2 = (point *) b;
+  return ((p1->y) - (p2->y));
 }

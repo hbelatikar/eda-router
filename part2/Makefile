@@ -47,4 +47,12 @@ all: ROUTE.exe
 .PHONY: execute
 
 execute: ROUTE.exe
-	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec1.gr adaptec1outcompX.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/in.gr outputs/out.txt
+
+.PHONY: execute_all
+
+execute_all: ROUTE.exe
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec1.gr outputs/adaptec1_out.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec2.gr outputs/adaptec2_out.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec3.gr outputs/adaptec3_out.txt
+
