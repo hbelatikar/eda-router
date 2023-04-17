@@ -291,13 +291,13 @@ int netDecompose (routingInst* rst) {
   // Iterate through all nets
   for(int i = 0; i < rst->numNets; i++){
     if (rst->nets[i].numPins > 2) {
-      if(i&1) {
-        // If iterator is odd quicksort the nets according to the X axis
-        qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareX);
-      } else {
-        // Quicksort the nets according to the Y axis
-        qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareY);
-      }
+      // if(i&1) {
+      //   // If iterator is odd quicksort the nets according to the X axis
+      //   qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareX);
+      // } else {
+      //   // Quicksort the nets according to the Y axis
+      //   qsort(rst->nets[i].pins, rst->nets[i].numPins, sizeof(point), compareY);
+      // }
       
       // BRUTE FORCE THE SOLUTION
       // TODO: Find a better approach than Bubble
@@ -305,11 +305,12 @@ int netDecompose (routingInst* rst) {
 
       // Go through all the pins to calc the manDist
       for (int j = 0; j < rst->nets[i].numPins - 1; j++){
-        for (int k = 0; k < rst->nets[i].numPins - j - 1; k++){
-          calcManDist = manDist(rst->nets[i].pins[k], rst->nets[i].pins[k+1]);
+        minManDist = manDist(rst->nets[i].pins[j], rst->nets[i].pins[j+1]);
+        for (int k = j+2; k < rst->nets[i].numPins; k++){
+          calcManDist = manDist(rst->nets[i].pins[j], rst->nets[i].pins[k]);
           if (calcManDist < minManDist){
             minManDist = calcManDist;
-            std::swap(rst->nets[i].pins[k], rst->nets[i].pins[k+1]);
+            std::swap(rst->nets[i].pins[j+1], rst->nets[i].pins[k]);
           }
         }
       }
