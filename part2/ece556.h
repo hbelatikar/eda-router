@@ -54,7 +54,7 @@
    int numPins ; 		/* number of pins (or terminals) of the net */
    point *pins ; 		/* array of pins (or terminals) of the net. */
    route nroute ;		/* stored route for the net. */
-
+   int cost ;        /*variable introduced to store the cost of a net in order to reorder the nets*/
   } net ;
   
   /**
@@ -157,4 +157,6 @@ int solveRouting(routingInst *rst);
 
   int compareX(const void *, const void *);
   int compareY(const void *, const void *);
+  void edgeWeightCal(routingInst *);
+  void newNetOrdering(routingInst *);
 #endif // ECE556_H

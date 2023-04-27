@@ -4,6 +4,9 @@
 #include <string>
 #include <sstream>
 
+int *edgeUtilityHistory;
+int *edgeOverFlow;
+int *edgeWeight;
 int readBenchmark(const char *fileName, routingInst *rst){
   std::ifstream input_file(fileName);
   if(input_file.is_open()){
@@ -116,7 +119,15 @@ int solveRouting(routingInst *rst){
       vEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
       rst->nets[i].nroute.segments[j].numEdges = hEdgesInSeg + vEdgesInSeg;
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets[i].nroute.segments[j].numEdges];
-      
+      edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
+      edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
+      edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
+      //Initialising the edge utilities to 1 
+      for(int i=0; i<(rst->numEdges); i++)
+        {
+          edgeUtilityHistory[i] = 1;
+        }
+
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
       nextNode = currentNode;
@@ -178,10 +189,8 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
   int prevEdgeID, currentEdgeID, edgeDifference;
   std::ofstream out_file(outRouteFile);
   if(out_file.is_open()){
-    
     for(int i = 0; i < rst->numNets; i++){
-      out_file << "n" << rst->nets[i].id << std::endl;
-      
+      out_file << "n" << rst->nets[i].id << "\n";
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
         prevEdgeID     = rst->nets[i].nroute.segments[j].edges[0];
         printPoints[0] = rst->nets[i].nroute.segments[j].p1;
@@ -193,13 +202,11 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
         for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
           currentEdgeID  = rst->nets[i].nroute.segments[j].edges[k];
           edgeDifference = std::abs(currentEdgeID - prevEdgeID);
-
     			//Check if the next edge is a bend then assign the pivot as the next startpoint
 					if (edgeDifference != 1 && edgeDifference != rst->gx) {
 		        writePtToFile(out_file, printPoints);
 						printPoints[0] = printPoints[1];
 					}
-		
     			//If its a stright edge find the end point
 					printPoints[1] = nextPoint(printPoints[1], currentEdgeID, rst);
           if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
@@ -210,7 +217,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
         }
         writePtToFile(out_file, printPoints);
       }
-      out_file << "!" << std::endl;
+      out_file << "!\n";
     }
     out_file.close();
     return 1;
@@ -238,6 +245,8 @@ int release(routingInst *rst){
   delete rst->nets;
   delete rst->edgeCaps;
   delete rst->edgeUtils;
+  delete edgeOverFlow;
+  delete edgeUtilityHistory;
   return 1;
 }
   
@@ -281,7 +290,7 @@ void writePtToFile (std::ofstream &outFile, point *P){
   // Print points as per specification
   outFile << "(" << P[0].x <<","<< P[0].y << ")";
   outFile << "-";
-  outFile << "(" << P[1].x <<","<< P[1].y << ")" << std::endl;
+  outFile << "(" << P[1].x <<","<< P[1].y << ")\n";
 }
 
 int netDecompose (routingInst* rst) {
@@ -343,3 +352,36 @@ int compareY (const void *a, const void *b){
   point *p2 = (point *) b;
   return ((p1->y) - (p2->y));
 }
+
+//Calculating edge weights for rip up and reroute
+void edgeWeightCal(routingInst *rst){
+  int newcost = 0;
+  for(int i=0; i<rst->numNets; i++) { 
+    for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
+      for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+        edgeOverFlow[k] = std::max(rst->edgeUtils[k] - rst->edgeCaps[k],0);
+        if(edgeOverFlow[k]>0){
+          edgeUtilityHistory[k] = edgeUtilityHistory[k] + 1;
+        }
+        edgeWeight[k] = edgeOverFlow[k] * edgeUtilityHistory[k];
+        newcost = newcost + edgeWeight[k];
+      }
+    }
+  rst->nets[i].cost = newcost;
+  }
+}
+
+void newNetOrdering(routingInst *rst){
+  net temp;
+  int n = rst->numNets;
+  for(int i=0; i<n-1; i++){
+    for(int j=0; j<n-i-1; j++){
+      if(rst->nets[j].cost < rst->nets[j+1].cost){
+        temp = rst->nets[j];
+        rst->nets[j] = rst->nets[j+1];
+        rst->nets[j+1] = temp;
+      }
+    }
+  }
+}
+
