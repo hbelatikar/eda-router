@@ -82,7 +82,7 @@ int main(int argc, char **argv)
 
 		while (rrrDuration.count() < ENDTIME)
 		{	
-			std::cout << "RRR Iteration: " << rrrIter << std::endl;
+			std::cout << "RRR Iteration: " << rrrIter << "\n";
 			
 			// Perform RRR
 			status = rrr(rst);

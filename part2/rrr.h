@@ -13,4 +13,7 @@ int singleNetReroute(routingInst *, point, point);
 
 bool pqComp (int, int);
 
+int edgeWeightCal(routingInst *);
+int newNetOrdering(routingInst *);
+
 #endif // RRR_H

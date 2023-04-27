@@ -4,9 +4,6 @@
 #include <string>
 #include <sstream>
 
-int *edgeUtilityHistory;
-int *edgeOverFlow;
-int *edgeWeight;
 int readBenchmark(const char *fileName, routingInst *rst){
   std::ifstream input_file(fileName);
   if(input_file.is_open()){
@@ -119,14 +116,13 @@ int solveRouting(routingInst *rst){
       vEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
       rst->nets[i].nroute.segments[j].numEdges = hEdgesInSeg + vEdgesInSeg;
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets[i].nroute.segments[j].numEdges];
-      edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
-      edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
-      edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
-      //Initialising the edge utilities to 1 
-      for(int i=0; i<(rst->numEdges); i++)
-        {
-          edgeUtilityHistory[i] = 1;
-        }
+      rst->edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
+      rst->edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
+      rst->edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
+      //Initialising the weight ordering arrays to 0 
+      std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
+      std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
+      std::fill_n(rst->edgeWeight,rst->numEdges,0);
 
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
@@ -245,8 +241,8 @@ int release(routingInst *rst){
   delete rst->nets;
   delete rst->edgeCaps;
   delete rst->edgeUtils;
-  delete edgeOverFlow;
-  delete edgeUtilityHistory;
+  delete rst->edgeOverFlow;
+  delete rst->edgeUtilityHistory;
   return 1;
 }
   
@@ -352,36 +348,3 @@ int compareY (const void *a, const void *b){
   point *p2 = (point *) b;
   return ((p1->y) - (p2->y));
 }
-
-//Calculating edge weights for rip up and reroute
-void edgeWeightCal(routingInst *rst){
-  int newcost = 0;
-  for(int i=0; i<rst->numNets; i++) { 
-    for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
-      for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-        edgeOverFlow[k] = std::max(rst->edgeUtils[k] - rst->edgeCaps[k],0);
-        if(edgeOverFlow[k]>0){
-          edgeUtilityHistory[k] = edgeUtilityHistory[k] + 1;
-        }
-        edgeWeight[k] = edgeOverFlow[k] * edgeUtilityHistory[k];
-        newcost = newcost + edgeWeight[k];
-      }
-    }
-  rst->nets[i].cost = newcost;
-  }
-}
-
-void newNetOrdering(routingInst *rst){
-  net temp;
-  int n = rst->numNets;
-  for(int i=0; i<n-1; i++){
-    for(int j=0; j<n-i-1; j++){
-      if(rst->nets[j].cost < rst->nets[j+1].cost){
-        temp = rst->nets[j];
-        rst->nets[j] = rst->nets[j+1];
-        rst->nets[j+1] = temp;
-      }
-    }
-  }
-}
-
