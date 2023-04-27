@@ -1,7 +1,11 @@
 // ECE556 - Copyright 2014 University of Wisconsin-Madison.  All Rights Reserved.
 
 #include "ece556.h"
+#include "rrr.h"
 #include <chrono>
+#include <thread>
+// #define ENDTIME 900000 //Define the exit time as 900s (15 mins)
+#define ENDTIME 100
 
 int main(int argc, char **argv)
 {
@@ -10,11 +14,13 @@ int main(int argc, char **argv)
  		printf("Usage : ./ROUTE.exe -d=<subnet_gen> -n=<rip&route> <input_benchmark_name> <output_file_name> \n");
  		return 1;
  	}
+	
+	std::chrono::time_point<std::chrono::high_resolution_clock> globalStart = std::chrono::high_resolution_clock::now();
 
  	int status;
 	u_int32_t totalTime = 0;
 	char *subnetGen = argv[1];
-	char *rrr = argv[2];
+	char *rrrEn = argv[2];
 	char *inputFileName = argv[3];
  	char *outputFileName = argv[4];
 
@@ -22,12 +28,12 @@ int main(int argc, char **argv)
  	routingInst *rst = new routingInst;
 	
  	/// Time the read benchmark function
- 	std::chrono::time_point<std::chrono::high_resolution_clock> start = std::chrono::high_resolution_clock::now();
+ 	std::chrono::time_point<std::chrono::high_resolution_clock> functionStart = std::chrono::high_resolution_clock::now();
 	status = readBenchmark(inputFileName, rst);
-	std::chrono::time_point<std::chrono::high_resolution_clock> stop = std::chrono::high_resolution_clock::now();
-	std::chrono::milliseconds duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-	totalTime += duration.count();
-	std::cout << std::endl << "Read Benchmark Time : " << duration.count() << "ms \n";
+	std::chrono::time_point<std::chrono::high_resolution_clock> functionStop = std::chrono::high_resolution_clock::now();
+	std::chrono::milliseconds functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	totalTime += functionDuration.count();
+	std::cout << std::endl << "Read Benchmark Time : " << functionDuration.count() << " ms \n";
  	
 	if(status==0) {
  		printf("ERROR: reading input file \n");
@@ -37,12 +43,12 @@ int main(int argc, char **argv)
 	/// Decompose net
 	if (subnetGen[3]=='1') {
 		// Time the netDecompose function
-		start = std::chrono::high_resolution_clock::now();
+		functionStart = std::chrono::high_resolution_clock::now();
 		status = netDecompose(rst);
-		stop = std::chrono::high_resolution_clock::now();
-		duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-		totalTime += duration.count();
-		std::cout << "Net Decompose Time : " << duration.count() << "ms \n";
+		functionStop = std::chrono::high_resolution_clock::now();
+		functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+		totalTime += functionDuration.count();
+		std::cout << "Net Decompose Time : " << functionDuration.count() << " ms \n";
 		
 		if(status==0) {
 			printf("ERROR: Net decomposing failed \n");
@@ -50,13 +56,13 @@ int main(int argc, char **argv)
  		}		
 	}
 
- 	/// run actual routing
- 	start = std::chrono::high_resolution_clock::now();
+ 	/// run initial routing
+ 	functionStart = std::chrono::high_resolution_clock::now();
  	status = solveRouting(rst);
-	stop = std::chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-	totalTime += duration.count();
-	std::cout << "Solve Time : " << duration.count() << "ms \n";
+	functionStop = std::chrono::high_resolution_clock::now();
+	functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	totalTime += functionDuration.count();
+	std::cout << "Solve Time : " << functionDuration.count() << " ms \n";
  	
 	if(status==0) {
  		printf("ERROR: running routing \n");
@@ -65,18 +71,49 @@ int main(int argc, char **argv)
  	}
 	
 	/// Rip up and Reroute
-	if (rrr[3]=='1')
-	{
-		//Perform RRR
+	if (rrrEn[3]=='1')
+	{	
+		functionStart = std::chrono::high_resolution_clock::now();
+	 	// Take current time
+		std::chrono::time_point<std::chrono::high_resolution_clock> rrrTime = std::chrono::high_resolution_clock::now();
+		std::chrono::milliseconds rrrDuration = std::chrono::duration_cast<std::chrono::milliseconds>(rrrTime - globalStart);
+		
+		u_int32_t rrrIter = 1;
+
+		while (rrrDuration.count() < ENDTIME)
+		{	
+			std::cout << "RRR Iteration: " << rrrIter << std::endl;
+			
+			// Perform RRR
+			status = rrr(rst);
+			if (status == 0) {
+				std::cout << "Could not perform RRR" << std::endl;
+				release(rst);
+				return 0;
+			}
+			
+			/////////////// REMOVE THIS ONCE DONE /////////////////////////////
+			//  std::this_thread::sleep_for(std::chrono::milliseconds(10));  //
+			/////////////// REMOVE THIS ONCE DONE /////////////////////////////
+
+			rrrTime = std::chrono::high_resolution_clock::now(); 
+			rrrDuration = std::chrono::duration_cast<std::chrono::milliseconds>(rrrTime - globalStart);
+			rrrIter++;
+		}
+		
+		functionStop = std::chrono::high_resolution_clock::now();
+		functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+		totalTime += functionDuration.count();
+		std::cout << "RRR Time : " << functionDuration.count() << " ms \n";
 	}
 
  	/// write the result
- 	start = std::chrono::high_resolution_clock::now();
+ 	functionStart = std::chrono::high_resolution_clock::now();
  	status = writeOutput(outputFileName, rst);
-	stop = std::chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-	std::cout << "Write Output Time : " << duration.count() << "ms \n";
-	totalTime += duration.count();
+	functionStop = std::chrono::high_resolution_clock::now();
+	functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	std::cout << "Write Output Time : " << functionDuration.count() << " ms \n";
+	totalTime += functionDuration.count();
  	
 	if(status==0) {
  		printf("ERROR: writing the result \n");
@@ -84,14 +121,14 @@ int main(int argc, char **argv)
  		return 1;
  	}
 
- 	start = std::chrono::high_resolution_clock::now();
+ 	functionStart = std::chrono::high_resolution_clock::now();
  	release(rst);
-	stop = std::chrono::high_resolution_clock::now();
-	duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-	std::cout << "Release Time : " << duration.count() << "ms \n";
-	totalTime += duration.count();
+	functionStop = std::chrono::high_resolution_clock::now();
+	functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	std::cout << "Release Time : " << functionDuration.count() << " ms \n";
+	totalTime += functionDuration.count();
  	
 	printf("\nDONE!\n");	
- 	std::cout << std::endl << "Total Time : " << totalTime <<"ms \n";
+ 	std::cout << std::endl << "Total Time : " << totalTime <<" ms \n";
 	return 0;
 }

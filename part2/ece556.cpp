@@ -231,7 +231,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
 int release(routingInst *rst){
   if(rst->nets != NULL){
     for(int i=0; i<rst->numNets; i++) {
-      if(rst->nets->nroute.segments != NULL) {
+      if(rst->nets[i].nroute.segments != NULL) {
         for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
           if(rst->nets[i].nroute.segments[j].edges != NULL) {
             delete rst->nets[i].nroute.segments[j].edges;  
