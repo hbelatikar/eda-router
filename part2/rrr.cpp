@@ -61,16 +61,12 @@ int edgeWeightCal(routingInst *rst){
 }
 
 int newNetOrdering(routingInst *rst){
-  net temp;
-  int n = rst->numNets;
-  for(int i=0; i<n-1; i++){
-    for(int j=0; j<n-i-1; j++){
-      if(rst->nets[j].cost < rst->nets[j+1].cost){
-        temp = rst->nets[j];
-        rst->nets[j] = rst->nets[j+1];
-        rst->nets[j+1] = temp;
-      }
-    }
-  }
+  qsort(rst->nets,rst->numNets,sizeof(net),compareNetOrders);
   return 1;
+}
+
+int compareNetOrders (const void *a, const void *b){
+  net *n1 = (net *) a;
+  net *n2 = (net *) b;
+  return ((n1->cost) - (n2->cost));
 }

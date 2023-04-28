@@ -16,4 +16,6 @@ bool pqComp (int, int);
 int edgeWeightCal(routingInst *);
 int newNetOrdering(routingInst *);
 
+int compareNetOrders (const void *, const void *);
+
 #endif // RRR_H
