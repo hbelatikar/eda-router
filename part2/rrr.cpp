@@ -68,5 +68,5 @@ int newNetOrdering(routingInst *rst){
 int compareNetOrders (const void *a, const void *b){
   net *n1 = (net *) a;
   net *n2 = (net *) b;
-  return ((n1->cost) - (n2->cost));
+  return ((n2->cost) - (n1->cost));
 }
