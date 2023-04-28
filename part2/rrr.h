@@ -19,6 +19,8 @@ int newNetOrdering(routingInst *);
 
 int compareNetOrders (const void *, const void *);
 
+std::vector<int> findNeighbors(point, routingInst*);
+
 // Ref: https://www.geeksforgeeks.org/how-to-create-an-unordered_map-of-user-defined-class-in-cpp/
 // Ref: https://www.techiedelight.com/use-struct-key-std-unordered_map-cpp/
 namespace{

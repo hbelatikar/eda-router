@@ -80,30 +80,6 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
   return 1;
 }
 
-// bool comparePQ (const void *a, const void *b){
-//   std::pair<point,double> *p1 = (std::pair<point,double> *) a;
-//   std::pair<point,double> *p2 = (std::pair<point,double> *) b;
-//   return ()
-// }
-
-/*int *adjacentVertices(node){
-  point adjVer[3];
-  adjVer[0].x=node.x-1;
-  adjVer[0].y=node.y;
-  adjVer[1].x=node.x;
-  adjVer[1].y=node.y+1;
-  adjVer[2].x=node.x+1;
-  adjVer[2].y=node.y;
-  adjVer[3].x=node.x;
-  adjVer[3].y=node.y-1;
-  return adjVer;
-}
-
-int parent(){
-
-}*/
-
-
 //Calculating edge weights for rip up and reroute
 int edgeWeightCal(routingInst *rst){
   int newcost = 0;
@@ -140,4 +116,8 @@ int compareNetOrders (const void *a, const void *b){
   net *n1 = (net *) a;
   net *n2 = (net *) b;
   return ((n2->cost) - (n1->cost));
+}
+
+std::vector<int> findNeighbors(point p, routingInst* rst){
+  
 }
