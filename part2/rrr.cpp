@@ -61,17 +61,14 @@ int parent(){
 //Calculating edge weights for rip up and reroute
 int edgeWeightCal(routingInst *rst){
   int newcost = 0;
-  for(int i=0; i<rst->numNets; i++) {
-    for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
-     rst->edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
-      //Initialising the weight ordering arrays to 0 
-      std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
-      std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
-      std::fill_n(rst->edgeWeight,rst->numEdges,0);
-    }
-  }
+  rst->edgeUtilityHistory = new int [rst->numEdges];
+  rst->edgeOverFlow = new int [rst->numEdges];
+  rst->edgeWeight = new int [rst->numEdges];
+  //Initialising the weight ordering arrays to 0 
+  std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
+  std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
+  std::fill_n(rst->edgeWeight,rst->numEdges,0);
+
   for(int i=0; i<rst->numNets; i++) { 
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
