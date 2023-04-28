@@ -55,7 +55,6 @@ int main(int argc, char **argv)
 			return 1;
  		}		
 	}
-
  	/// run initial routing
  	functionStart = std::chrono::high_resolution_clock::now();
  	status = solveRouting(rst);

@@ -93,10 +93,9 @@ int solveRouting(routingInst *rst){
   int hEdgesInSeg, vEdgesInSeg; 
   int edgeIndex = -1;
   int pinIndex = -1;           // Number of pins of the net
-
+  
   //Iterating through all the nets 
   for(int i=0; i<rst->numNets; i++) {  
-    
     pinIndex = 0;
     //Number of segments = Number of pins - 1
     rst->nets[i].nroute.numSegs = rst->nets[i].numPins-1;
@@ -108,22 +107,12 @@ int solveRouting(routingInst *rst){
       P1 = rst->nets[i].pins[pinIndex];
       pinIndex++;
       P2 = rst->nets[i].pins[pinIndex];
-
       rst->nets[i].nroute.segments[j].p1 = P1;
       rst->nets[i].nroute.segments[j].p2 = P2;
-      
       hEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.x - rst->nets[i].nroute.segments[j].p2.x);
       vEdgesInSeg = std::abs(rst->nets[i].nroute.segments[j].p1.y - rst->nets[i].nroute.segments[j].p2.y);
       rst->nets[i].nroute.segments[j].numEdges = hEdgesInSeg + vEdgesInSeg;
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
-      rst->edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
-      //Initialising the weight ordering arrays to 0 
-      std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
-      std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
-      std::fill_n(rst->edgeWeight,rst->numEdges,0);
-
       // Using temporary nodes to traverse between nodes
       currentNode = P1;
       nextNode = currentNode;
@@ -292,7 +281,6 @@ void writePtToFile (std::ofstream &outFile, point *P){
 int netDecompose (routingInst* rst) {
   
   int minManDist, calcManDist;
-
   // Iterate through all nets
   for(int i = 0; i < rst->numNets; i++){
     if (rst->nets[i].numPins > 2) {

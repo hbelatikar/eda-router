@@ -40,10 +40,38 @@ bool pqComp (int a, int b){
   return true;
 }
 
+/*int *adjacentVertices(node){
+  point adjVer[3];
+  adjVer[0].x=node.x-1;
+  adjVer[0].y=node.y;
+  adjVer[1].x=node.x;
+  adjVer[1].y=node.y+1;
+  adjVer[2].x=node.x+1;
+  adjVer[2].y=node.y;
+  adjVer[3].x=node.x;
+  adjVer[3].y=node.y-1;
+  return adjVer;
+}
+
+int parent(){
+
+}*/
+
 
 //Calculating edge weights for rip up and reroute
 int edgeWeightCal(routingInst *rst){
   int newcost = 0;
+  for(int i=0; i<rst->numNets; i++) {
+    for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
+     rst->edgeUtilityHistory = new int [rst->nets[i].nroute.segments[j].numEdges];
+      rst->edgeOverFlow = new int [rst->nets[i].nroute.segments[j].numEdges];
+      rst->edgeWeight = new int [rst->nets[i].nroute.segments[j].numEdges];
+      //Initialising the weight ordering arrays to 0 
+      std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
+      std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
+      std::fill_n(rst->edgeWeight,rst->numEdges,0);
+    }
+  }
   for(int i=0; i<rst->numNets; i++) { 
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
