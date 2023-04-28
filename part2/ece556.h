@@ -9,19 +9,8 @@
 #include <iostream>
 
  /**
-  * A structure to represent a 2D Point. 
+  * A class to represent a 2D Point. 
   */
-//  typedef struct
-//  {
-//     int x ; /* x coordinate ( >=0 in the routing grid)*/
-//     int y ; /* y coordinate ( >=0 in the routing grid)*/
-
-//     bool operator==(const point &p) const {
-//         return x == p.x && y == p.y;
-//     }
-
-//  } point ;
-
 class point {
   public:
     int x;

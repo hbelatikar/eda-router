@@ -34,24 +34,17 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
   // Wikipedia's A* algorithm : https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
   // Implementation/Tutorial  : https://www.youtube.com/watch?v=aKYlikFAV4k
 
-  // Need queues for the groups 1 and 3
-  // Need a min heap priorty queue for group 2
-    // Need a compare function for this
-
   std::priority_queue<PPI, std::vector<PPI>, comparePQ> openSet;
-  
-  openSet.push({start,manDist(start,dest)});
-
   std::unordered_map<point, point, pointHash>cameFrom;
-  
-  // int totalPoints = rst->gx * rst->gy;
-  
   std::unordered_map<point, int, pointHash>gScore;
-  gScore[start] = 0;
-
   std::unordered_map<point, int, pointHash>fScore;
-  fScore[start] = manDist(start, dest);
+  
+  int tentGScore;
   point current;
+
+  openSet.push({start,manDist(start,dest)});
+  gScore[start] = 0;
+  fScore[start] = manDist(start, dest);
 
   while (!openSet.empty()) {
     
@@ -69,17 +62,16 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
 
     /*
       for each neighbor of current
-            // d(current,neighbor) is the weight of the edge from current to neighbor
-            // tentative_gScore is the distance from start to the neighbor through current
-            tent_gScore = gScore[current] + rst
-            tentative_gScore := gScore[current] + d(current, neighbor)
-            if tentative_gScore < gScore[neighbor]
-                // This path to neighbor is better than any previous one. Record it!
-                cameFrom[neighbor] := current
-                gScore[neighbor] := tentative_gScore
-                fScore[neighbor] := tentative_gScore + h(neighbor)
-                if neighbor not in openSet
-                    openSet.add(neighbor)
+        // tentGScore is the distance from start to the neighbor through current
+        
+        tentGScore = gScore[current] + rst->edgeWeights[getEdgeId(current,neighbor)];
+        if tentGScore < gScore[neighbor]
+            // This path to neighbor is better than any previous one. Record it!
+            cameFrom[neighbor] := current;
+            gScore[neighbor]   := tentGScore;
+            fScore[neighbor]   := tentGScore + manDist(neighbor)
+            if neighbor not in openSet
+                openSet.push(neighbor)
     */
     
   }
