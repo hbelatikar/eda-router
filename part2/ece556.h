@@ -11,17 +11,38 @@
  /**
   * A structure to represent a 2D Point. 
   */
- typedef struct
- {
-   int x ; /* x coordinate ( >=0 in the routing grid)*/
-   int y ; /* y coordinate ( >=0 in the routing grid)*/
+//  typedef struct
+//  {
+//     int x ; /* x coordinate ( >=0 in the routing grid)*/
+//     int y ; /* y coordinate ( >=0 in the routing grid)*/
 
- } point ;
+//     bool operator==(const point &p) const {
+//         return x == p.x && y == p.y;
+//     }
 
+//  } point ;
 
-  /**
-  * A structure to represent a segment
-  */
+class point {
+  public:
+    int x;
+    int y;
+
+    // Declaring constructors and overloading operators for pointHashing
+    point (): x(-1), y(-1) {}
+    point (int new_x, int new_y) : x(new_x), y(new_y) {}
+    
+    bool operator!=(const point &p) const {
+      return ((x != p.x) || (y != p.y));
+    }
+    
+    bool operator==(const point &p) const {
+      return ((x == p.x) && (y == p.y));
+    }
+};
+
+/**
+* A structure to represent a segment
+*/
  typedef struct
  {
    point p1 ; 	/* start point of a segment */

@@ -1,6 +1,8 @@
 #include "rrr.h"
 
 int rrr(routingInst *rst) {
+  pointHash::gy = rst->gy;
+  
   int status = 0;
   // Compute Edge Weights
   edgeWeightCal(rst);
@@ -29,21 +31,68 @@ int rrr(routingInst *rst) {
 
 int singleNetReroute(routingInst *rst, point start, point dest) {
   // References: 
-  // We are refering wikipedia's algorithm: https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
-  // We are also following the implementation/tutorial here: https://www.youtube.com/watch?v=aKYlikFAV4k
+  // Wikipedia's A* algorithm : https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
+  // Implementation/Tutorial  : https://www.youtube.com/watch?v=aKYlikFAV4k
 
   // Need queues for the groups 1 and 3
   // Need a min heap priorty queue for group 2
     // Need a compare function for this
 
+  std::priority_queue<PPI, std::vector<PPI>, comparePQ> openSet;
+  
+  openSet.push({start,manDist(start,dest)});
+
+  std::unordered_map<point, point, pointHash>cameFrom;
+  
+  // int totalPoints = rst->gx * rst->gy;
+  
+  std::unordered_map<point, int, pointHash>gScore;
+  gScore[start] = 0;
+
+  std::unordered_map<point, int, pointHash>fScore;
+  fScore[start] = manDist(start, dest);
+  point current;
+
+  while (!openSet.empty()) {
+    
+    // current := the node in openSet having the lowest fScore[] value
+    current = openSet.top().first;
+    
+    if(current == dest) {
+      // Perform pathRetrace
+    }
+    
+    //openSet.Remove(current)
+    openSet.pop();
+
+    //adjacentVertices()
+
+    /*
+      for each neighbor of current
+            // d(current,neighbor) is the weight of the edge from current to neighbor
+            // tentative_gScore is the distance from start to the neighbor through current
+            tent_gScore = gScore[current] + rst
+            tentative_gScore := gScore[current] + d(current, neighbor)
+            if tentative_gScore < gScore[neighbor]
+                // This path to neighbor is better than any previous one. Record it!
+                cameFrom[neighbor] := current
+                gScore[neighbor] := tentative_gScore
+                fScore[neighbor] := tentative_gScore + h(neighbor)
+                if neighbor not in openSet
+                    openSet.add(neighbor)
+    */
+    
+  }
   
 
   return 1;
 }
 
-bool pqComp (int a, int b){
-  return true;
-}
+// bool comparePQ (const void *a, const void *b){
+//   std::pair<point,double> *p1 = (std::pair<point,double> *) a;
+//   std::pair<point,double> *p2 = (std::pair<point,double> *) b;
+//   return ()
+// }
 
 
 //Calculating edge weights for rip up and reroute
