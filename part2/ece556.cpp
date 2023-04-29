@@ -93,7 +93,7 @@ int solveRouting(routingInst *rst){
   int hEdgesInSeg, vEdgesInSeg; 
   int edgeIndex = -1;
   int pinIndex = -1;           // Number of pins of the net
-  
+  int edgeID = -1;
   //Iterating through all the nets 
   for(int i=0; i<rst->numNets; i++) {  
     pinIndex = 0;
@@ -124,8 +124,9 @@ int solveRouting(routingInst *rst){
             nextNode.x++;
           else
             nextNode.x--;
-          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
-          rst->edgeUtils[edgeIndex]++;
+          edgeID = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = edgeID;
+          rst->edgeUtils[edgeID]++;
           currentNode = nextNode;
           edgeIndex++;
         }
@@ -135,8 +136,9 @@ int solveRouting(routingInst *rst){
             nextNode.y++;
           else
             nextNode.y--;
-          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
-          rst->edgeUtils[edgeIndex]++;
+          edgeID = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = edgeID;
+          rst->edgeUtils[edgeID]++;
           currentNode = nextNode;
           edgeIndex++;
         }
@@ -147,8 +149,9 @@ int solveRouting(routingInst *rst){
             nextNode.y++;
           else
             nextNode.y--;
-          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
-          rst->edgeUtils[edgeIndex]++;
+          edgeID = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = edgeID;
+          rst->edgeUtils[edgeID]++;
           currentNode = nextNode;
           edgeIndex++;
         }
@@ -158,8 +161,9 @@ int solveRouting(routingInst *rst){
             nextNode.x++;
           else
             nextNode.x--;
-          rst->nets[i].nroute.segments[j].edges[edgeIndex] = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
-          rst->edgeUtils[edgeIndex]++;
+          edgeID = getEdgeID(currentNode.x, currentNode.y, nextNode.x, nextNode.y, rst->gx, rst->gy);
+          rst->nets[i].nroute.segments[j].edges[edgeIndex] = edgeID;
+          rst->edgeUtils[edgeID]++;
         currentNode = nextNode;
         edgeIndex++;
         }
@@ -177,15 +181,17 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
     for(int i = 0; i < rst->numNets; i++){
       out_file << "n" << rst->nets[i].id << "\n";
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
-        prevEdgeID     = rst->nets[i].nroute.segments[j].edges[0];
-        printPoints[0] = rst->nets[i].nroute.segments[j].p1;
+        segment presentsegment = rst->nets[i].nroute.segments[j];
+        int *edges = presentsegment.edges;
+        prevEdgeID     = edges[0];
+        printPoints[0] = presentsegment.p1;
         printPoints[1] = nextPoint(printPoints[0], prevEdgeID, rst);
         if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
           std::cout << "ERROR: nextPoint function call returned negative value";
           return 0;
         }
         for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-          currentEdgeID  = rst->nets[i].nroute.segments[j].edges[k];
+          currentEdgeID  = edges[k];
           edgeDifference = std::abs(currentEdgeID - prevEdgeID);
     			//Check if the next edge is a bend then assign the pivot as the next startpoint
 					if (edgeDifference != 1 && edgeDifference != rst->gx) {
@@ -247,8 +253,6 @@ int getEdgeIDthruPts(point a, point b, routingInst* rst){
 
 point nextPoint(point p1, int edgeID, routingInst *rst) {
   point ptToReturn;
-  ptToReturn.x = -1;
-  ptToReturn.y = -1;
   //If the given edge is the horizontal edge
 	if(edgeID < ((rst->gx - 1) * rst->gy)) {	
 		//if the edge is going right or the left direction 
@@ -283,7 +287,6 @@ void writePtToFile (std::ofstream &outFile, point *P){
 }
 
 int netDecompose (routingInst* rst) {
-  
   int minManDist, calcManDist;
   // Iterate through all nets
   for(int i = 0; i < rst->numNets; i++){
