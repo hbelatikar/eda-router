@@ -256,8 +256,8 @@ point nextPoint(point p1, int edgeID, routingInst *rst) {
   //If the given edge is the horizontal edge
 	if(edgeID < ((rst->gx - 1) * rst->gy)) {	
 		//if the edge is going right or the left direction 
-		point leftPoint  = {p1.x - 1, p1.y};
-		point rightPoint = {p1.x + 1, p1.y};
+		point leftPoint(p1.x - 1, p1.y);
+		point rightPoint(p1.x + 1, p1.y);
 		if(getEdgeID(p1.x, p1.y, leftPoint.x, leftPoint.y, rst->gx, rst->gy) == edgeID) {
 			ptToReturn = leftPoint;
 		}
@@ -267,8 +267,8 @@ point nextPoint(point p1, int edgeID, routingInst *rst) {
 	} else {  
     // If the given edge is the vertical edge
 		// Find if the edge is going top or the bottom
-		point bottomPoint = {p1.x, p1.y - 1};
-		point topPoint    = {p1.x, p1.y + 1};
+		point bottomPoint(p1.x, p1.y - 1);
+		point topPoint(p1.x, p1.y + 1);
 		if(getEdgeID(p1.x, p1.y, bottomPoint.x, bottomPoint.y, rst->gx, rst->gy) == edgeID) {
 			ptToReturn = bottomPoint;
 		}

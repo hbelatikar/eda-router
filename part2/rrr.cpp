@@ -18,7 +18,6 @@ int rrr(routingInst *rst) {
       for (int l = 0; l < rst->nets[i].nroute.segments[k].numEdges; l++){
         presentedge = presentSegment.edges[l];
         rst->edgeUtils[presentedge] = rst->edgeUtils[presentedge]-1;
-        printf("Edgeutility:%d \n",rst->edgeUtils[presentedge]);
       }
     }
     for (int j = 0; j < rst->nets[i].numPins - 1; j++){
@@ -43,18 +42,21 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
   std::unordered_map<point, int, pointHash> gScore;
   std::unordered_map<point, int, pointHash> fScore;
 
-  // Adding a map based openset to check if points are presnet in queue
+  // Adding a map based openset to check if points are present in queue
   std::unordered_map<point, int, pointHash>openSet_mapped;
   
   int tentGScore;
+  bool notPresentFlag = false;
   point current;
+  point nullStart(NULL,NULL);
   std::vector<point> neighbors;
 
-  openSet.push({start,manDist(start,dest)});
+  openSet.push(std::make_pair(start,manDist(start,dest)));
   openSet_mapped[start] = manDist(start, dest);
   gScore[start] = 0;
   fScore[start] = manDist(start, dest);
-  // cameFrom[start] = ;
+  cameFrom[start] = nullStart;
+   
   while (!openSet.empty()) {
     
     // Get point with lowest fScore value
@@ -62,24 +64,32 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
     
     if(current == dest) {
       // Perform pathRetrace
+      std::cout << "Reached the end from "<< start << " to " << dest << "\n";
       return 1;
     }
     
-    //openSet.Remove(current)
+    //Remove the current from openSet
     openSet.pop();
     openSet_mapped.erase(start);
 
     neighbors = findNeighbors(current,rst);
-    // std::cout << "The node is (" << current.x << "," << current.y << ")\n";
+
+    // std::cout << "The node is << current << "\n";
     
     for(auto & neighbor : neighbors){
+      notPresentFlag = false;
+      if(openSet_mapped.count(neighbor) == 0) {
+        fScore[neighbor] = INT_MAX;
+        gScore[neighbor] = INT_MAX;
+        notPresentFlag = true;
+      }
       tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
       if(tentGScore < gScore[neighbor]){
         cameFrom[neighbor] = current;
         gScore[neighbor] = tentGScore;
         fScore[neighbor] = tentGScore + manDist(neighbor,dest);
-        if(openSet_mapped.count(neighbor) == 0) {
-          openSet.push({neighbor,fScore[neighbor]});
+        if(notPresentFlag) {
+          openSet.push(std::make_pair(neighbor,fScore[neighbor]));
           openSet_mapped[neighbor] = fScore[neighbor];
         }
       }
@@ -91,6 +101,7 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
 //Calculating edge weights for rip up and reroute
 int edgeWeightCal(routingInst *rst){
   int newcost;
+  
   rst->edgeUtilityHistory = new int [rst->numEdges];
   rst->edgeOverFlow = new int [rst->numEdges];
   rst->edgeWeight = new int [rst->numEdges];
@@ -98,33 +109,25 @@ int edgeWeightCal(routingInst *rst){
   std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
   std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
   std::fill_n(rst->edgeWeight,rst->numEdges,0);
+  
   for(int i=0; i<rst->numNets; i++) { 
     newcost = 0;
     int presentedge = 0;
-    int presentEdgeUtility = 0;
     net presentNet = rst->nets[i];
     route presentRoute = presentNet.nroute;
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
       segment presentSegment = presentRoute.segments[j];
       for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
         presentedge = presentSegment.edges[k];
-        presentEdgeUtility = rst->edgeUtils[presentedge];
-        printf("Edgeid:%d, EdgeUtility:%d, ", presentedge, presentEdgeUtility);
         rst->edgeOverFlow[presentedge] = std::max(rst->edgeUtils[presentedge] - rst->edgeCaps[presentedge],0);
-        printf("points:%d, %d, %d, %d ", presentNet.nroute.segments->p1.x, presentNet.nroute.segments->p1.y, presentNet.nroute.segments->p2.x, presentNet.nroute.segments->p2.y);
-        printf("edgeoverflow:%d,  ",rst->edgeOverFlow[presentedge]);
         if(rst->edgeOverFlow[presentedge]>0){
           rst->edgeUtilityHistory[presentedge] = rst->edgeUtilityHistory[presentedge] + 1;
         }
-        printf("edgeUtilityHistory:%d, ",rst->edgeUtilityHistory[presentedge]);
         rst->edgeWeight[presentedge] = rst->edgeOverFlow[presentedge] * rst->edgeUtilityHistory[presentedge];
-        printf("edgeWeight:%d \n",rst->edgeWeight[presentedge]);
         newcost = newcost + rst->edgeWeight[presentedge];
-        printf("new cost of edge:%d \n",newcost);
       }
     }
-  printf("new cost of net:%d\n",newcost);
-  rst->nets[i].cost = newcost;
+    rst->nets[i].cost = newcost;
   }
   return 1;
 }
@@ -142,18 +145,27 @@ int compareNetOrders (const void *a, const void *b){
 
 std::vector<point> findNeighbors(point p, routingInst* rst){
   std::vector<point> neighbors;
+  point ptToPush;
   // Max point is rst->gx -1 & rst->gy -1
-  if (p.x < (rst->gy - 1)) {
-    neighbors.push_back({p.x+1,p.y});
+  if (p.x < (rst->gx - 1)) {
+    ptToPush.x = p.x+1;
+    ptToPush.y = p.y;
+    neighbors.push_back(ptToPush);
   }
   if (p.x > 0) {
-    neighbors.push_back({p.x-1,p.y});
+    ptToPush.x = p.x-1;
+    ptToPush.y = p.y;
+    neighbors.push_back(ptToPush);
   }
-  if (p.y < (rst->gx - 1)) {
-    neighbors.push_back({p.x,p.y+1});
+  if (p.y < (rst->gy - 1)) {
+    ptToPush.x = p.x;
+    ptToPush.y = p.y+1;
+    neighbors.push_back(ptToPush);
   }
   if (p.y > 0) {
-    neighbors.push_back({p.x,p.y-1});
+    ptToPush.x = p.x;
+    ptToPush.y = p.y-1;
+    neighbors.push_back(ptToPush);
   }
 
   return neighbors;
