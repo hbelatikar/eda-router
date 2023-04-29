@@ -241,6 +241,10 @@ int getEdgeID (int x1, int y1, int x2, int y2, int gx, int gy){
   else return -1; // Points are not adjacent
 }
 
+int getEdgeIDthruPts(point a, point b, routingInst* rst){
+  return getEdgeID(a.x,a.y,b.x,b.y,rst->gx,rst->gy);
+}
+
 point nextPoint(point p1, int edgeID, routingInst *rst) {
   point ptToReturn;
   ptToReturn.x = -1;

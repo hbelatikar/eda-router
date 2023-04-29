@@ -33,51 +33,55 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
   // References: 
   // Wikipedia's A* algorithm : https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
   // Implementation/Tutorial  : https://www.youtube.com/watch?v=aKYlikFAV4k
-
+  
   std::priority_queue<PPI, std::vector<PPI>, comparePQ> openSet;
-  std::unordered_map<point, point, pointHash>cameFrom;
-  std::unordered_map<point, int, pointHash>gScore;
-  std::unordered_map<point, int, pointHash>fScore;
+  std::unordered_map<point, point, pointHash> cameFrom;
+  std::unordered_map<point, int, pointHash> gScore;
+  std::unordered_map<point, int, pointHash> fScore;
+
+  // Adding a map based openset to check if points are presnet in queue
+  std::unordered_map<point, int, pointHash>openSet_mapped;
   
   int tentGScore;
   point current;
+  std::vector<point> neighbors;
 
   openSet.push({start,manDist(start,dest)});
+  openSet_mapped[start] = manDist(start, dest);
   gScore[start] = 0;
   fScore[start] = manDist(start, dest);
-
+  // cameFrom[start] = ;
   while (!openSet.empty()) {
     
-    // current := the node in openSet having the lowest fScore[] value
+    // Get point with lowest fScore value
     current = openSet.top().first;
     
     if(current == dest) {
       // Perform pathRetrace
+      return 1;
     }
     
     //openSet.Remove(current)
     openSet.pop();
+    openSet_mapped.erase(start);
 
-    //adjacentVertices()
-
-    /*
-      for each neighbor of current
-        // tentGScore is the distance from start to the neighbor through current
-        
-        tentGScore = gScore[current] + rst->edgeWeights[getEdgeId(current,neighbor)];
-        if tentGScore < gScore[neighbor]
-            // This path to neighbor is better than any previous one. Record it!
-            cameFrom[neighbor] := current;
-            gScore[neighbor]   := tentGScore;
-            fScore[neighbor]   := tentGScore + manDist(neighbor)
-            if neighbor not in openSet
-                openSet.push(neighbor)
-    */
+    neighbors = findNeighbors(current,rst);
+    // std::cout << "The node is (" << current.x << "," << current.y << ")\n";
     
+    for(auto & neighbor : neighbors){
+      tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
+      if(tentGScore < gScore[neighbor]){
+        cameFrom[neighbor] = current;
+        gScore[neighbor] = tentGScore;
+        fScore[neighbor] = tentGScore + manDist(neighbor,dest);
+        if(openSet_mapped.count(neighbor) == 0) {
+          openSet.push({neighbor,fScore[neighbor]});
+          openSet_mapped[neighbor] = fScore[neighbor];
+        }
+      }
+    }
   }
-  
-
-  return 1;
+  return 0;
 }
 
 //Calculating edge weights for rip up and reroute
@@ -118,6 +122,21 @@ int compareNetOrders (const void *a, const void *b){
   return ((n2->cost) - (n1->cost));
 }
 
-std::vector<int> findNeighbors(point p, routingInst* rst){
-  
+std::vector<point> findNeighbors(point p, routingInst* rst){
+  std::vector<point> neighbors;
+  // Max point is rst->gx -1 & rst->gy -1
+  if (p.x < (rst->gy - 1)) {
+    neighbors.push_back({p.x+1,p.y});
+  }
+  if (p.x > 0) {
+    neighbors.push_back({p.x-1,p.y});
+  }
+  if (p.y < (rst->gx - 1)) {
+    neighbors.push_back({p.x,p.y+1});
+  }
+  if (p.y > 0) {
+    neighbors.push_back({p.x,p.y-1});
+  }
+
+  return neighbors;
 }
