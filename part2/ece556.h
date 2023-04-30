@@ -27,11 +27,19 @@ class point {
     bool operator==(const point &p) const {
       return ((x == p.x) && (y == p.y));
     }
-
-  friend std::ostream &operator<<(std::ostream& os, const point& p) {
-    os <<"(" << p.x << "," << p.y << ")";
-    return os;
-  }
+    
+    bool operator<(const point &p) const {
+      return (x < p.x);
+    }
+    
+    bool operator>(const point &p) const {
+      return (x > p.x);
+    }
+    
+    friend std::ostream &operator<<(std::ostream& os, const point& p) {
+      os <<"(" << p.x << "," << p.y << ")";
+      return os;
+    }
 };
 
 /**

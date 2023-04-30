@@ -9,6 +9,7 @@ int rrr(routingInst *rst) {
   edgeWeightCal(rst);
   // Reorder the Nets
   newNetOrdering(rst);
+  
   for (int i = 0; i < rst->numNets; i++){
     net presentNet = rst->nets[i];
     route presentRoute = presentNet.nroute;
@@ -22,7 +23,7 @@ int rrr(routingInst *rst) {
     }
     for (int j = 0; j < rst->nets[i].numPins - 1; j++){
       // Reroute the net segments
-      status = singleNetReroute(rst,rst->nets[i].pins[j],rst->nets[i].pins[j+1]);
+      status = singleNetReroute(rst,rst->nets[i].pins[j],rst->nets[i].pins[j+1], i, j);
       if (status == 0) {
         std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
         return 0;
@@ -32,7 +33,7 @@ int rrr(routingInst *rst) {
   return 1;
 }
 
-int singleNetReroute(routingInst *rst, point start, point dest) {
+int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int segIdx) {
   // References: 
   // Wikipedia's A* algorithm : https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
   // Implementation/Tutorial  : https://www.youtube.com/watch?v=aKYlikFAV4k
@@ -43,16 +44,22 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
   std::unordered_map<point, int, pointHash> fScore;
 
   // Adding a map based openset to check if points are present in queue
-  std::unordered_map<point, int, pointHash>openSet_mapped;
-  
-  int tentGScore;
-  bool notPresentFlag = false;
+  std::unordered_map<point, int, pointHash> openSet_map;
+  // Adding a closedSet set since Wikipedias algo revisits processed nodes
+  std::unordered_map<point, int, pointHash> closedSet;
+
+  int status = 0;
+  int edgeIdx = -1;
+  int tentGScore = INT_MAX;
+  bool firstTimeFlag = false;
   point current;
-  point nullStart(NULL,NULL);
+  point tempRetrace;
+  point nullStart(-2,-2);
   std::vector<point> neighbors;
+  // std::vector<point> path;
 
   openSet.push(std::make_pair(start,manDist(start,dest)));
-  openSet_mapped[start] = manDist(start, dest);
+  openSet_map[start] = manDist(start, dest);
   gScore[start] = 0;
   fScore[start] = manDist(start, dest);
   cameFrom[start] = nullStart;
@@ -63,34 +70,64 @@ int singleNetReroute(routingInst *rst, point start, point dest) {
     current = openSet.top().first;
     
     if(current == dest) {
-      // Perform pathRetrace
-      std::cout << "Reached the end from "<< start << " to " << dest << "\n";
-      return 1;
+      status = 0;
+      edgeIdx = 0;
+      // Perform path retrace
+      while (current != start) {
+        tempRetrace = cameFrom.at(current);
+        // path.push_back(tempRetrace);
+        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = getEdgeIDthruPts(tempRetrace, current, rst);
+        current = tempRetrace;
+        edgeIdx++;
+        status = 1;
+      }
+      if(status == 1) {
+        rst->nets[netIdx].nroute.segments[segIdx].numEdges = edgeIdx;
+        // std::cout << "Reached the end from "<< start << " to " << dest << "\n";
+        // for (int i = 0; i < rst->nets[netIdx].nroute.segments[segIdx].numEdges; i++) {
+        //   std::cout << "Edge :" << rst->nets[netIdx].nroute.segments[segIdx].edges[i] <<"\n";
+        // }
+        
+        openSet_map.clear();
+        closedSet.clear();
+        cameFrom.clear();
+        gScore.clear();
+        fScore.clear();
+        // path.clear();
+        return 1;
+      } else {
+        std::cout << "Could not retrace path!\n";
+        return 0;
+      }
     }
     
     //Remove the current from openSet
     openSet.pop();
-    openSet_mapped.erase(start);
+    openSet_map.erase(current);
+    closedSet[current] = 1;
 
     neighbors = findNeighbors(current,rst);
 
     // std::cout << "The node is << current << "\n";
     
     for(auto & neighbor : neighbors){
-      notPresentFlag = false;
-      if(openSet_mapped.count(neighbor) == 0) {
-        fScore[neighbor] = INT_MAX;
-        gScore[neighbor] = INT_MAX;
-        notPresentFlag = true;
-      }
-      tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
-      if(tentGScore < gScore[neighbor]){
-        cameFrom[neighbor] = current;
-        gScore[neighbor] = tentGScore;
-        fScore[neighbor] = tentGScore + manDist(neighbor,dest);
-        if(notPresentFlag) {
-          openSet.push(std::make_pair(neighbor,fScore[neighbor]));
-          openSet_mapped[neighbor] = fScore[neighbor];
+      // If we have not processed this neighbor before process it
+      if(closedSet.count(neighbor) == 0) {
+        firstTimeFlag = false;
+        if(openSet_map.count(neighbor) == 0) {
+          fScore[neighbor] = INT_MAX;
+          gScore[neighbor] = INT_MAX;
+          firstTimeFlag = true;
+        }
+        tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
+        if(tentGScore < gScore[neighbor]){
+          cameFrom[neighbor] = current;
+          gScore[neighbor] = tentGScore;
+          fScore[neighbor] = tentGScore + manDist(neighbor,dest);
+          if(firstTimeFlag) {
+            openSet.push(std::make_pair(neighbor,fScore[neighbor]));
+            openSet_map[neighbor] = fScore[neighbor];
+          }
         }
       }
     }
@@ -170,3 +207,16 @@ std::vector<point> findNeighbors(point p, routingInst* rst){
 
   return neighbors;
 }
+
+// int retraceCameFrom (point start, point dest, std::unordered_map<point, point, pointHash> cameFrom, routingInst* rst){
+//   // std::vector<point> path;
+//   // point curr = dest;
+//   // point temp;
+//   // while (curr != start) {
+//   //   temp = cameFrom.at(curr);
+//   //   path.push_back(temp);
+//   //   curr = temp;
+//   // }
+  
+//   return 1;
+// }

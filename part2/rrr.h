@@ -11,7 +11,7 @@
 
 int rrr (routingInst *rst);
 
-int singleNetReroute(routingInst *, point, point);
+int singleNetReroute(routingInst *, point, point, int, int);
 
 
 int edgeWeightCal(routingInst *);
@@ -42,4 +42,6 @@ class comparePQ {
           return a.second > b.second;
     }
 };
+
+// int retraceCameFrom(point, point, std::unordered_map<point, point, pointHash>, routingInst*);
 #endif // RRR_H

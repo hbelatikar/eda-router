@@ -184,13 +184,13 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
         segment presentsegment = rst->nets[i].nroute.segments[j];
         int *edges = presentsegment.edges;
         prevEdgeID     = edges[0];
-        printPoints[0] = presentsegment.p1;
+        printPoints[0] = presentsegment.p2;
         printPoints[1] = nextPoint(printPoints[0], prevEdgeID, rst);
         if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
-          std::cout << "ERROR: nextPoint function call returned negative value";
+          std::cout << "ERROR: nextPoint function call returned negative value \n";
           return 0;
         }
-        for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+        for(int k = rst->nets[i].nroute.segments[j].numEdges; k > 0; k--) {
           currentEdgeID  = edges[k];
           edgeDifference = std::abs(currentEdgeID - prevEdgeID);
     			//Check if the next edge is a bend then assign the pivot as the next startpoint
@@ -201,7 +201,7 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
     			//If its a stright edge find the end point
 					printPoints[1] = nextPoint(printPoints[1], currentEdgeID, rst);
           if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
-            std::cout << "ERROR: nextPoint function call returned negative value";
+            std::cout << "ERROR: nextPoint function call returned negative value\n";
             return 0;
           }
 					prevEdgeID = currentEdgeID;
