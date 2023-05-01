@@ -4,7 +4,6 @@ int rrr(routingInst *rst) {
   pointHash::gy = rst->gy;
   
   int status = 0;
-  int presentedge = 0;
   // Compute Edge Weights
   edgeWeightCal(rst);
   // Reorder the Nets
@@ -64,7 +63,7 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   int status = 0;
   int edgeID = -1;
   int edgeIdx = -1;
-  int tentGScore = INT_MAX;
+  int tentGScore = INT32_MAX;
   bool firstTimeFlag = false;
   point current;
   point tempRetrace;
@@ -132,8 +131,8 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
       if(closedSet.count(neighbor) == 0) {
         firstTimeFlag = false;
         if(openSet_map.count(neighbor) == 0) {
-          fScore[neighbor] = INT_MAX;
-          gScore[neighbor] = INT_MAX;
+          fScore[neighbor] = INT32_MAX;
+          gScore[neighbor] = INT32_MAX;
           firstTimeFlag = true;
         }
         tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
