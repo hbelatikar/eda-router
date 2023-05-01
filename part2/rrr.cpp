@@ -1,7 +1,7 @@
 #include "rrr.h"
 
 int rrr(routingInst *rst) {
-  pointHash::gy = rst->gy;
+  pointHash::gx = rst->gx;
   
   int status = 0;
   // Compute Edge Weights
@@ -16,9 +16,9 @@ int rrr(routingInst *rst) {
       // std::cout << "Ripping up the seg with "<<rst->nets[i].nroute.segments[k].numEdges<<" edges\n";
       // std::cout << "Ripping up the edge "<<rst->nets[i].nroute.segments[k].edges[l]<<"\n";
       // rst->edgeUtils[rst->nets[i].nroute.segments[k].edges[l]]--;
-      delete rst->nets[i].nroute.segments[j].edges;
+      delete[] rst->nets[i].nroute.segments[j].edges;
       }
-    delete rst->nets[i].nroute.segments;
+    delete[] rst->nets[i].nroute.segments;
   }
   // Reset the edge utilisation
   std::fill_n(rst->edgeUtils,rst->numEdges,0);
@@ -31,8 +31,6 @@ int rrr(routingInst *rst) {
 
     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++){
       
-      rst->nets->nroute.segments[j].numEdges = manDist(rst->nets[i].pins[j],rst->nets[i].pins[j+1]);
-      rst->nets[i].nroute.segments[j].edges = new int[rst->nets->nroute.segments[j].numEdges];
       rst->nets[i].nroute.segments[j].p1 = rst->nets[i].pins[j];
       rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j+1];
 
@@ -62,10 +60,10 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   // Adding a closedSet set since Wikipedias algo revisits processed nodes
   std::unordered_map<point, int, pointHash> closedSet;
 
-  gScore.reserve   (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  fScore.reserve   (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  cameFrom.reserve (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  closedSet.reserve(2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  // gScore.reserve   (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  // fScore.reserve   (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  // cameFrom.reserve (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  // closedSet.reserve(std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
 
   int status = 0;
   int edgeID = -1;
@@ -76,9 +74,8 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   point tempRetrace;
   point nullStart(-2,-2);
   std::vector<point> neighbors;
-  // std::vector<point> path;
-
-
+  std::vector<point> path;
+  std::vector<point>::size_type pathLen;
 
   openSet.push(std::make_pair(start,manDist(start,dest)));
   openSet_map[start] = manDist(start, dest);
@@ -98,22 +95,30 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
       // Perform path retrace
       while (current != start) {
         tempRetrace = cameFrom.at(current);
-        // path.push_back(tempRetrace);
-        edgeID = getEdgeIDthruPts(tempRetrace, current, rst);
-        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
-        rst->edgeUtils[edgeID]++;
+        path.push_back(tempRetrace);
         current = tempRetrace;
         edgeIdx++;
         status = 1;
       }
       if(status == 1) {
         rst->nets[netIdx].nroute.segments[segIdx].numEdges = edgeIdx;
+        rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
+        pathLen = path.size();
+        for (int i=0; i<pathLen-1; i++){
+          edgeID = getEdgeIDthruPts(path[i], path[i+1], rst);
+          rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
+          rst->edgeUtils[edgeID]++;
+        }
+
+        // edgeID = getEdgeIDthruPts(tempRetrace, current, rst);
+        // rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
+        // rst->edgeUtils[edgeID]++;
         // std::cout << "Reached the end from "<< start << " to " << dest << "\n";
         // for (int i = 0; i < rst->nets[netIdx].nroute.segments[segIdx].numEdges; i++) {
         //   std::cout << "Edge :" << rst->nets[netIdx].nroute.segments[segIdx].edges[i] <<"\n";
         // }
         
-        cameFrom.erase(cameFrom.begin(), cameFrom.end());
+        // cameFrom.clear();
         // gScore.clear();
         // fScore.clear();
         // closedSet.clear();

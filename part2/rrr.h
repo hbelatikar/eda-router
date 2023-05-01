@@ -26,12 +26,12 @@ std::vector<point> findNeighbors(point, routingInst*);
 namespace{
   class pointHash {
     public:
-      static int gy;
+      static int gx;
       std::size_t operator()(const point& p) const {
-          return gy * p.x + p.y;
+          return p.x + p.y*gx;
       }
   };
-  int pointHash::gy = 0;
+  int pointHash::gx = 0;
 }
 
 // Ref: https://www.geeksforgeeks.org/custom-comparator-in-priority_queue-in-cpp-stl/

@@ -237,19 +237,19 @@ int release(routingInst *rst){
       if(rst->nets[i].nroute.segments != NULL) {
         for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
           if(rst->nets[i].nroute.segments[j].edges != NULL) {
-            delete rst->nets[i].nroute.segments[j].edges;  
+            delete[] rst->nets[i].nroute.segments[j].edges;  
           }
         }
-        delete rst->nets[i].nroute.segments;
+        delete[] rst->nets[i].nroute.segments;
       }
-      delete rst->nets[i].pins;
+      delete[] rst->nets[i].pins;
     }
   }
-  delete rst->nets;
-  delete rst->edgeCaps;
-  delete rst->edgeUtils;
-  delete rst->edgeOverFlow;
-  delete rst->edgeUtilityHistory;
+  delete[] rst->nets;
+  delete[] rst->edgeCaps;
+  delete[] rst->edgeUtils;
+  delete[] rst->edgeOverFlow;
+  delete[] rst->edgeUtilityHistory;
   return 1;
 }
   
