@@ -27,7 +27,11 @@ int rrr(routingInst *rst) {
   for (int i = 0; i < rst->numNets; i++){
     // Allocate the net infos before rerouting
     rst->nets[i].nroute.numSegs = rst->nets[i].numPins - 1;
-    rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
+    // try {
+      rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
+    // } catch(std::bad_alloc&) {
+    //   std::cerr << "Failed allocating seg mem during reroute\n";
+    // }
 
     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++){
       
@@ -36,10 +40,12 @@ int rrr(routingInst *rst) {
 
       // Reroute the net segments
       status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j);
-      if (status == 0) {
-        std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
-        return 0;
-      }
+      // if (status == 0) {
+      //   std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
+      //   return 0;
+      // } else {
+      std::cout << "Rerouted net:"<<i<<" seg:"<<j<<"\n";
+      
     }
   }
   return 1;
@@ -60,14 +66,10 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   // Adding a closedSet set since Wikipedias algo revisits processed nodes
   std::unordered_map<point, int, pointHash> closedSet;
 
-  // gScore.reserve   (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  // fScore.reserve   (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  // cameFrom.reserve (std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-  // closedSet.reserve(std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
-
   int status = 0;
   int edgeID = -1;
   int edgeIdx = -1;
+  int fScoreVal;
   int tentGScore = INT32_MAX;
   bool firstTimeFlag = false;
   point current;
@@ -91,7 +93,7 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
     if(current == dest) {
       status = 0;
       edgeIdx = 0;
-
+      path.push_back(current);
       // Perform path retrace
       while (current != start) {
         tempRetrace = cameFrom.at(current);
@@ -101,23 +103,18 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
         status = 1;
       }
       if(status == 1) {
-        rst->nets[netIdx].nroute.segments[segIdx].numEdges = edgeIdx;
+        pathLen = (int)path.size();
+        rst->nets[netIdx].nroute.segments[segIdx].numEdges = pathLen-1;
+        // try{
         rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
-        pathLen = path.size();
+        // } catch(std::bad_alloc&) {
+        //   std::cerr << "Failed allocating edge mem during reroute\n";
+        // }
         for (int i=0; i<pathLen-1; i++){
-          edgeID = getEdgeIDthruPts(path[i], path[i+1], rst);
-          rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
+          edgeID = getEdgeIDthruPts(path.at(i),path.at(i+1), rst);
+          rst->nets[netIdx].nroute.segments[segIdx].edges[i] = edgeID;
           rst->edgeUtils[edgeID]++;
         }
-
-        // edgeID = getEdgeIDthruPts(tempRetrace, current, rst);
-        // rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
-        // rst->edgeUtils[edgeID]++;
-        // std::cout << "Reached the end from "<< start << " to " << dest << "\n";
-        // for (int i = 0; i < rst->nets[netIdx].nroute.segments[segIdx].numEdges; i++) {
-        //   std::cout << "Edge :" << rst->nets[netIdx].nroute.segments[segIdx].edges[i] <<"\n";
-        // }
-        
         // cameFrom.clear();
         // gScore.clear();
         // fScore.clear();
@@ -151,12 +148,13 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
         }
         tentGScore = gScore[current] + rst->edgeWeight[getEdgeIDthruPts(current,neighbor,rst)];
         if(tentGScore < gScore[neighbor]){
+          fScoreVal = tentGScore + manDist(neighbor,dest);
           cameFrom[neighbor] = current;
           gScore[neighbor] = tentGScore;
-          fScore[neighbor] = tentGScore + manDist(neighbor,dest);
+          fScore[neighbor] = fScoreVal;
           if(firstTimeFlag) {
-            openSet.push(std::make_pair(neighbor,fScore[neighbor]));
-            openSet_map[neighbor] = fScore[neighbor];
+            openSet.push(std::make_pair(neighbor,fScoreVal));
+            openSet_map[neighbor] = fScoreVal;
           }
         }
       }
