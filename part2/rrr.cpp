@@ -10,20 +10,33 @@ int rrr(routingInst *rst) {
   // Reorder the Nets
   newNetOrdering(rst);
   
+  // Rip up ALL the nets
   for (int i = 0; i < rst->numNets; i++){
-    net presentNet = rst->nets[i];
-    route presentRoute = presentNet.nroute;
-    // Rip up the net
-    for(int k = 0; k<rst->nets[i].nroute.numSegs; k++) {
-      segment presentSegment = presentRoute.segments[k];
-      for (int l = 0; l < rst->nets[i].nroute.segments[k].numEdges; l++){
-        presentedge = presentSegment.edges[l];
-        rst->edgeUtils[presentedge] = rst->edgeUtils[presentedge]-1;
+    // std::cout << "Ripping up the i:"<<i<<"th net n"<<rst->nets[i].id<<"\n";
+    for(int j = 0; j<rst->nets[i].nroute.numSegs; j++) {
+      // std::cout << "Ripping up the seg with "<<rst->nets[i].nroute.segments[k].numEdges<<" edges\n";
+      // std::cout << "Ripping up the edge "<<rst->nets[i].nroute.segments[k].edges[l]<<"\n";
+      // rst->edgeUtils[rst->nets[i].nroute.segments[k].edges[l]]--;
+      delete rst->nets[i].nroute.segments[j].edges;
       }
-    }
-    for (int j = 0; j < rst->nets[i].numPins - 1; j++){
+    delete rst->nets[i].nroute.segments;
+  }
+  // Reset the edge utilisation
+  std::fill_n(rst->edgeUtils,rst->numEdges,0);
+  
+  // Reroute ALL the nets
+  for (int i = 0; i < rst->numNets; i++){
+    // Allocate the net infos before rerouting
+    rst->nets[i].nroute.numSegs = rst->nets[i].numPins - 1;
+    rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
+
+    for (int j = 0; j < rst->nets[i].nroute.numSegs; j++){
+      
+      rst->nets->nroute.segments[j].numEdges = manDist(rst->nets[i].pins[j],rst->nets[i].pins[j+1]);
+      rst->nets[i].nroute.segments[j].edges = new int[rst->nets->nroute.segments[j].numEdges];
+
       // Reroute the net segments
-      status = singleNetReroute(rst,rst->nets[i].pins[j],rst->nets[i].pins[j+1], i, j);
+      status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j);
       if (status == 0) {
         std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
         return 0;
@@ -49,6 +62,7 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   std::unordered_map<point, int, pointHash> closedSet;
 
   int status = 0;
+  int edgeID = -1;
   int edgeIdx = -1;
   int tentGScore = INT_MAX;
   bool firstTimeFlag = false;
@@ -72,11 +86,14 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
     if(current == dest) {
       status = 0;
       edgeIdx = 0;
+
       // Perform path retrace
       while (current != start) {
         tempRetrace = cameFrom.at(current);
         // path.push_back(tempRetrace);
-        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = getEdgeIDthruPts(tempRetrace, current, rst);
+        edgeID = getEdgeIDthruPts(tempRetrace, current, rst);
+        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
+        rst->edgeUtils[edgeID]++;
         current = tempRetrace;
         edgeIdx++;
         status = 1;

@@ -163,6 +163,8 @@ int solveRouting(routingInst *rst);
 
   int getEdgeIDthruPts(point, point, routingInst*);
 
+  point* getEdgePts(int edgeID, routingInst* rst);
+
   /* point nextPoint(point, int, routingInst*)
     
   */

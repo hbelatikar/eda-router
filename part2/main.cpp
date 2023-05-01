@@ -5,7 +5,7 @@
 #include <chrono>
 #include <thread>
 // #define ENDTIME 900000 //Define the exit time as 900s (15 mins)
-#define ENDTIME 100
+#define ENDTIME 10000
 
 int main(int argc, char **argv)
 {

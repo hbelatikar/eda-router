@@ -11,7 +11,7 @@ CCC = g++
 # Compiler options                                                              
 # ---------------------------------------------------------------------         
 
-CCOPT = -m64 -O -fPIC -fexceptions -DNDEBUG -DIL_STD -g -Wall -std=c++11 
+CCOPT = -m64 -O -fPIC -fexceptions -DNDEBUG -DIL_STD -std=c++11 -g -Wall  
 
 # ---------------------------------------------------------------------         
 # Link options and libraries                                                    
@@ -57,7 +57,7 @@ execute: ROUTE.exe
 
 execute_all: ROUTE.exe
 	/bin/rm -f /outputs/adaptec*_out.txt
-	./ROUTE.exe -d=1 -n=1 ../benchmarks/adaptec1.gr outputs/adaptec1_out.txt
-	./ROUTE.exe -d=1 -n=1 ../benchmarks/adaptec2.gr outputs/adaptec2_out.txt
-	./ROUTE.exe -d=1 -n=1 ../benchmarks/adaptec3.gr outputs/adaptec3_out.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec1.gr outputs/adaptec1_out.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec2.gr outputs/adaptec2_out.txt
+	./ROUTE.exe -d=1 -n=0 ../benchmarks/adaptec3.gr outputs/adaptec3_out.txt
 
