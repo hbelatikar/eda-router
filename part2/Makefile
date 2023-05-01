@@ -51,7 +51,7 @@ all: ROUTE.exe
 .PHONY: execute
 
 execute: ROUTE.exe
-	./ROUTE.exe -d=1 -n=1 ../benchmarks/in.gr outputs/out.txt
+	./ROUTE.exe -d=1 -n=1 ../benchmarks/adaptec1.gr outputs/out.txt
 
 .PHONY: execute_all
 

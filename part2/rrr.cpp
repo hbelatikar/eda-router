@@ -33,6 +33,8 @@ int rrr(routingInst *rst) {
       
       rst->nets->nroute.segments[j].numEdges = manDist(rst->nets[i].pins[j],rst->nets[i].pins[j+1]);
       rst->nets[i].nroute.segments[j].edges = new int[rst->nets->nroute.segments[j].numEdges];
+      rst->nets[i].nroute.segments[j].p1 = rst->nets[i].pins[j];
+      rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j+1];
 
       // Reroute the net segments
       status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j);
@@ -60,6 +62,11 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   // Adding a closedSet set since Wikipedias algo revisits processed nodes
   std::unordered_map<point, int, pointHash> closedSet;
 
+  gScore.reserve   (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  fScore.reserve   (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  cameFrom.reserve (2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+  closedSet.reserve(2 * std::abs((start.x) - (dest.x)) * std::abs((start.y) - (dest.y)));
+
   int status = 0;
   int edgeID = -1;
   int edgeIdx = -1;
@@ -70,6 +77,8 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   point nullStart(-2,-2);
   std::vector<point> neighbors;
   // std::vector<point> path;
+
+
 
   openSet.push(std::make_pair(start,manDist(start,dest)));
   openSet_map[start] = manDist(start, dest);
@@ -104,11 +113,11 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
         //   std::cout << "Edge :" << rst->nets[netIdx].nroute.segments[segIdx].edges[i] <<"\n";
         // }
         
-        openSet_map.clear();
-        closedSet.clear();
-        cameFrom.clear();
-        gScore.clear();
-        fScore.clear();
+        cameFrom.erase(cameFrom.begin(), cameFrom.end());
+        // gScore.clear();
+        // fScore.clear();
+        // closedSet.clear();
+        // openSet_map.clear();
         // path.clear();
         return 1;
       } else {
