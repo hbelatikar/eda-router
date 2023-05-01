@@ -183,42 +183,44 @@ int writeOutput(const char *outRouteFile, routingInst *rst){
     for(int i = 0; i < rst->numNets; i++){
       out_file << "n" << rst->nets[i].id << "\n";
       for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
-        for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-          startPoints = getEdgePts(rst->nets[i].nroute.segments[j].edges[k], rst);
-          out_file << *(startPoints) << "," << *(startPoints + 1) << "\n";
+        //for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+          //startPoints = getEdgePts(rst->nets[i].nroute.segments[j].edges[k], rst);
+          //out_file << *(startPoints) << "," << *(startPoints + 1) << "\n";
+        //}
+        segment presentsegment = rst->nets[i].nroute.segments[j];
+        int *edges = presentsegment.edges;
+        prevEdgeID     = edges[0];
+        startPoints = getEdgePts(prevEdgeID, rst);
+        if (rst->nets[i].nroute.segments[j].p1 == *(startPoints) ||  
+            rst->nets[i].nroute.segments[j].p1 == *(startPoints + 1) ) {
+          printPoints[0] = rst->nets[i].nroute.segments[j].p1;
+        } else {
+          printPoints[0] = rst->nets[i].nroute.segments[j].p2;
         }
-      
-        // startPoints = getEdgePts(prevEdgeID, rst);
-        // if (rst->nets[i].nroute.segments[j].p1 == *(startPoints) ||  
-        //     rst->nets[i].nroute.segments[j].p1 == *(startPoints + 1) ) {
-        //   printPoints[0] = rst->nets[i].nroute.segments[j].p1;
-        // } else {
-        //   printPoints[0] = rst->nets[i].nroute.segments[j].p2;
-        // }
-        // printPoints[1] = nextPoint(printPoints[0], prevEdgeID, rst);
-        // if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
-        //   std::cout << "ERROR: nextPoint function call returned negative value \n";
-        //   std::cout << "ERROR: P1: "<< printPoints[0] << " P2: " << printPoints[1] << " edgeID: "<<  prevEdgeID <<"\n";
-        //   return 0;
-        // }
-        // for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-        //   currentEdgeID  = rst->nets[i].nroute.segments[j].edges[k];
-        //   edgeDifference = std::abs(currentEdgeID - prevEdgeID);
-    		// 	//Check if the next edge is a bend then assign the pivot as the next startpoint
-				// 	if (edgeDifference != 1 && edgeDifference != rst->gx) {
-		    //     out_file << printPoints[0] << "," << printPoints[1] << "\n";
-				// 		printPoints[0] = printPoints[1];
-				// 	}
-    		// 	//If its a stright edge find the end point
-				// 	printPoints[1] = nextPoint(printPoints[1], currentEdgeID, rst);
-        //   if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
-        //     std::cout << "ERROR: nextPoint function call returned negative value\n";
-        //     std::cout << "ERROR: P1: "<< printPoints[0] << " P2: " << printPoints[1] << " edgeID: "<<  currentEdgeID <<"\n";
-        //     return 0;
-        //   }
-				// 	prevEdgeID = currentEdgeID;
-        // }
-        // out_file << printPoints[0] << "," << printPoints[1] << "\n";
+        printPoints[1] = nextPoint(printPoints[0], prevEdgeID, rst);
+        if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
+          std::cout << "ERROR: nextPoint function call returned negative value \n";
+          std::cout << "ERROR: P1: "<< printPoints[0] << " P2: " << printPoints[1] << " edgeID: "<<  prevEdgeID <<"\n";
+          return 0;
+        }
+        for(int k = 1; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
+          currentEdgeID  = rst->nets[i].nroute.segments[j].edges[k];
+          edgeDifference = std::abs(currentEdgeID - prevEdgeID);
+    			//Check if the next edge is a bend then assign the pivot as the next startpoint
+					if (edgeDifference != 1 && edgeDifference != rst->gx) {
+		        out_file << printPoints[0] << "," << printPoints[1] << "\n";
+						printPoints[0] = printPoints[1];
+					}
+    			//If its a stright edge find the end point
+					printPoints[1] = nextPoint(printPoints[1], currentEdgeID, rst);
+          if((printPoints[1].x < 0) || (printPoints[1].y < 0)){
+            std::cout << "ERROR: nextPoint function call returned negative value\n";
+            std::cout << "ERROR: P1: "<< printPoints[0] << " P2: " << printPoints[1] << " edgeID: "<<  currentEdgeID <<"\n";
+            return 0;
+          }
+					prevEdgeID = currentEdgeID;
+        }
+        out_file << printPoints[0] << "," << printPoints[1] << "\n";
       }
       out_file << "!\n";
     }
