@@ -37,14 +37,13 @@ int rrr(routingInst *rst) {
 
       // Reroute the net segments
       relaxer = 0;
-      do {
+      // do {
         status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j, relaxer);
-        relaxer += 2;
-      } while (status == 0);
-      // if (status == 0) {
-      //   std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
-      //   return 0;
-      // }
+        if(status==0) {
+          std::cout << "Rerouted failed for net:"<<i<<"\n";
+          relaxer += 2;
+        }
+      // } while (status == 0);
     }
     std::cout << "Rerouted net:"<<i<<"\n";
   }
@@ -68,7 +67,7 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
 
   int status = 0;
   int edgeID = -1;
-  int edgeIdx = -1;
+  // int edgeIdx = -1;
   int fScoreVal;
   int tentGScore = INT32_MAX;
   bool firstTimeFlag = false;
@@ -77,15 +76,15 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   point nullStart(-2,-2);
   std::vector<point> neighbors;
   std::vector<point> path;
-  // std::vector<point>::size_type pathLen;
+  std::vector<point>::size_type pathLen;
   
-  int topBound = std::min(start.y,dest.y)   + relaxer; 
-  int botBound = std::max(start.y,dest.y)   - relaxer; 
-  int leftBound = std::min(start.x,dest.x)  - relaxer; 
-  int rightBound = std::max(start.x,dest.x) + relaxer;
+  int topBound = std::max(start.y,dest.y)   ;//- 2; 
+  int botBound = std::min(start.y,dest.y)   ;//+ 2; 
+  int leftBound = std::min(start.x,dest.x)  ;//+ 2; 
+  int rightBound = std::max(start.x,dest.x) ;//- 2;
 
-  rst->nets[netIdx].nroute.segments[segIdx].numEdges = manDist(start,dest);
-  rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
+  // rst->nets[netIdx].nroute.segments[segIdx].numEdges = manDist(start,dest);
+  // rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
         
   openSet.push(std::make_pair(start,manDist(start,dest)));
   openSet_map[start] = manDist(start, dest);
@@ -100,29 +99,25 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
     
     if(current == dest) {
       status = 0;
-      edgeIdx = 0;
+      // edgeIdx = 0;
       path.push_back(current);
       // Perform path retrace
       while (current != start) {
         tempRetrace = cameFrom.at(current);
-        edgeID = getEdgeIDthruPts(current, tempRetrace, rst);
-        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
-        rst->edgeUtils[edgeID]++;
         path.push_back(tempRetrace);
         current = tempRetrace;
-        edgeIdx++;
         status = 1;
       }
       if(status == 1) {
-        // pathLen = (int)path.size();
-        rst->nets[netIdx].nroute.segments[segIdx].numEdges = edgeIdx;
-        // rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
+        pathLen = (int)path.size();
+        rst->nets[netIdx].nroute.segments[segIdx].numEdges = pathLen-1;
+        rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
         
-        // for (int i=0; i<pathLen-1; i++){
-        //   edgeID = getEdgeIDthruPts(path.at(i),path.at(i+1), rst);
-        //   rst->nets[netIdx].nroute.segments[segIdx].edges[i] = edgeID;
-        //   rst->edgeUtils[edgeID]++;
-        // }
+        for (int i=0; i<pathLen-1; i++){
+          edgeID = getEdgeIDthruPts(path.at(i), path.at(i+1), rst);
+          rst->nets[netIdx].nroute.segments[segIdx].edges[i] = edgeID;
+          rst->edgeUtils[edgeID]++;
+        }
         return 1;
       } else {
         std::cout << "Could not retrace path!\n";
@@ -133,7 +128,6 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
     //Remove the current from openSet
     openSet.pop();
     openSet_map.erase(current);
-    closedSet[current] = 1;
 
     neighbors = findNeighbors(current, topBound, botBound, leftBound, rightBound, rst);
 
@@ -161,7 +155,9 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
         }
       }
     }
+    closedSet[current] = 1;
   }
+  std::cout <<"Couldn't find any\n";
   return 0;
 }
 
@@ -214,22 +210,22 @@ std::vector<point> findNeighbors(point p, int topBound, int botBound, int leftBo
   std::vector<point> neighbors;
   point ptToPush;
   // Max point is rst->gx -1 & rst->gy -1
-  if ((p.x < (rst->gx - 1)) && (p.x < rightBound)) {
+  if ((p.x < (rst->gx - 1)) && (p.x <= rightBound)) {
     ptToPush.x = p.x+1;
     ptToPush.y = p.y;
     neighbors.push_back(ptToPush);
   }
-  if ((p.x > 0) && (p.x > leftBound)) {
+  if ((p.x > 0) && (p.x >= leftBound)) {
     ptToPush.x = p.x-1;
     ptToPush.y = p.y;
     neighbors.push_back(ptToPush);
   }
-  if ((p.y < (rst->gy - 1)) && (p.y < topBound)) {
+  if ((p.y < (rst->gy - 1)) && (p.y <= topBound)) {
     ptToPush.x = p.x;
     ptToPush.y = p.y+1;
     neighbors.push_back(ptToPush);
   }
-  if ((p.y > 0) && (p.y > botBound)) {
+  if ((p.y > 0) && (p.y >= botBound)) {
     ptToPush.x = p.x;
     ptToPush.y = p.y-1;
     neighbors.push_back(ptToPush);
