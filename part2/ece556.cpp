@@ -238,8 +238,13 @@ int release(routingInst *rst){
     for(int i=0; i<rst->numNets; i++) {
       if(rst->nets[i].nroute.segments != NULL) {
         for(int j = 0; j < rst->nets[i].nroute.numSegs; j++) {
-          if(rst->nets[i].nroute.segments[j].edges != NULL) {
+          // if(rst->nets[i].nroute.segments[j].edges != NULL) {
+          //   delete[] rst->nets[i].nroute.segments[j].edges;  
+          // }
+          try {
             delete[] rst->nets[i].nroute.segments[j].edges;  
+          } catch(const std::exception& e) {
+            std::cerr << e.what() << '\n';
           }
         }
         delete[] rst->nets[i].nroute.segments;

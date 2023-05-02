@@ -4,6 +4,7 @@ int rrr(routingInst *rst) {
   pointHash::gx = rst->gx;
   
   int status = 0;
+  int relaxer = 0;
   // Compute Edge Weights
   edgeWeightCal(rst);
   // Reorder the Nets
@@ -27,31 +28,30 @@ int rrr(routingInst *rst) {
   for (int i = 0; i < rst->numNets; i++){
     // Allocate the net infos before rerouting
     rst->nets[i].nroute.numSegs = rst->nets[i].numPins - 1;
-    // try {
-      rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
-    // } catch(std::bad_alloc&) {
-    //   std::cerr << "Failed allocating seg mem during reroute\n";
-    // }
-
+    rst->nets[i].nroute.segments = new segment[rst->nets[i].nroute.numSegs];
+    
     for (int j = 0; j < rst->nets[i].nroute.numSegs; j++){
       
       rst->nets[i].nroute.segments[j].p1 = rst->nets[i].pins[j];
       rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j+1];
 
       // Reroute the net segments
-      status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j);
+      relaxer = 0;
+      do {
+        status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j, relaxer);
+        relaxer += 2;
+      } while (status == 0);
       // if (status == 0) {
       //   std::cout << "Could not reroute net n" << rst->nets[i].id << "\n";
       //   return 0;
-      // } else {
-      std::cout << "Rerouted net:"<<i<<" seg:"<<j<<"\n";
-      
+      // }
     }
+    std::cout << "Rerouted net:"<<i<<"\n";
   }
   return 1;
 }
 
-int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int segIdx) {
+int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int segIdx, int relaxer) {
   // References: 
   // Wikipedia's A* algorithm : https://en.wikipedia.org/wiki/A*_search_algorithm#Pseudocode
   // Implementation/Tutorial  : https://www.youtube.com/watch?v=aKYlikFAV4k
@@ -77,8 +77,16 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   point nullStart(-2,-2);
   std::vector<point> neighbors;
   std::vector<point> path;
-  std::vector<point>::size_type pathLen;
+  // std::vector<point>::size_type pathLen;
+  
+  int topBound = std::min(start.y,dest.y)   + relaxer; 
+  int botBound = std::max(start.y,dest.y)   - relaxer; 
+  int leftBound = std::min(start.x,dest.x)  - relaxer; 
+  int rightBound = std::max(start.x,dest.x) + relaxer;
 
+  rst->nets[netIdx].nroute.segments[segIdx].numEdges = manDist(start,dest);
+  rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
+        
   openSet.push(std::make_pair(start,manDist(start,dest)));
   openSet_map[start] = manDist(start, dest);
   gScore[start] = 0;
@@ -97,30 +105,24 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
       // Perform path retrace
       while (current != start) {
         tempRetrace = cameFrom.at(current);
+        edgeID = getEdgeIDthruPts(current, tempRetrace, rst);
+        rst->nets[netIdx].nroute.segments[segIdx].edges[edgeIdx] = edgeID;
+        rst->edgeUtils[edgeID]++;
         path.push_back(tempRetrace);
         current = tempRetrace;
         edgeIdx++;
         status = 1;
       }
       if(status == 1) {
-        pathLen = (int)path.size();
-        rst->nets[netIdx].nroute.segments[segIdx].numEdges = pathLen-1;
-        // try{
-        rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
-        // } catch(std::bad_alloc&) {
-        //   std::cerr << "Failed allocating edge mem during reroute\n";
+        // pathLen = (int)path.size();
+        rst->nets[netIdx].nroute.segments[segIdx].numEdges = edgeIdx;
+        // rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
+        
+        // for (int i=0; i<pathLen-1; i++){
+        //   edgeID = getEdgeIDthruPts(path.at(i),path.at(i+1), rst);
+        //   rst->nets[netIdx].nroute.segments[segIdx].edges[i] = edgeID;
+        //   rst->edgeUtils[edgeID]++;
         // }
-        for (int i=0; i<pathLen-1; i++){
-          edgeID = getEdgeIDthruPts(path.at(i),path.at(i+1), rst);
-          rst->nets[netIdx].nroute.segments[segIdx].edges[i] = edgeID;
-          rst->edgeUtils[edgeID]++;
-        }
-        // cameFrom.clear();
-        // gScore.clear();
-        // fScore.clear();
-        // closedSet.clear();
-        // openSet_map.clear();
-        // path.clear();
         return 1;
       } else {
         std::cout << "Could not retrace path!\n";
@@ -133,11 +135,11 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
     openSet_map.erase(current);
     closedSet[current] = 1;
 
-    neighbors = findNeighbors(current,rst);
+    neighbors = findNeighbors(current, topBound, botBound, leftBound, rightBound, rst);
 
     // std::cout << "The node is << current << "\n";
     
-    for(auto & neighbor : neighbors){
+    for(auto & neighbor : neighbors) {
       // If we have not processed this neighbor before process it
       if(closedSet.count(neighbor) == 0) {
         firstTimeFlag = false;
@@ -208,43 +210,29 @@ int compareNetOrders (const void *a, const void *b){
   return ((n2->cost) - (n1->cost));
 }
 
-std::vector<point> findNeighbors(point p, routingInst* rst){
+std::vector<point> findNeighbors(point p, int topBound, int botBound, int leftBound, int rightBound, routingInst* rst){
   std::vector<point> neighbors;
   point ptToPush;
   // Max point is rst->gx -1 & rst->gy -1
-  if (p.x < (rst->gx - 1)) {
+  if ((p.x < (rst->gx - 1)) && (p.x < rightBound)) {
     ptToPush.x = p.x+1;
     ptToPush.y = p.y;
     neighbors.push_back(ptToPush);
   }
-  if (p.x > 0) {
+  if ((p.x > 0) && (p.x > leftBound)) {
     ptToPush.x = p.x-1;
     ptToPush.y = p.y;
     neighbors.push_back(ptToPush);
   }
-  if (p.y < (rst->gy - 1)) {
+  if ((p.y < (rst->gy - 1)) && (p.y < topBound)) {
     ptToPush.x = p.x;
     ptToPush.y = p.y+1;
     neighbors.push_back(ptToPush);
   }
-  if (p.y > 0) {
+  if ((p.y > 0) && (p.y > botBound)) {
     ptToPush.x = p.x;
     ptToPush.y = p.y-1;
     neighbors.push_back(ptToPush);
   }
-
   return neighbors;
 }
-
-// int retraceCameFrom (point start, point dest, std::unordered_map<point, point, pointHash> cameFrom, routingInst* rst){
-//   // std::vector<point> path;
-//   // point curr = dest;
-//   // point temp;
-//   // while (curr != start) {
-//   //   temp = cameFrom.at(curr);
-//   //   path.push_back(temp);
-//   //   curr = temp;
-//   // }
-  
-//   return 1;
-// }
