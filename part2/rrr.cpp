@@ -1,12 +1,10 @@
 #include "rrr.h"
 
-int rrr(routingInst *rst) {
+int rrr(routingInst *rst, int rrrIter) {
   pointHash::gx = rst->gx;
   
   int status = 0;
   int relaxer = 0;
-  // Compute Edge Weights
-  edgeWeightCal(rst);
   // Reorder the Nets
   newNetOrdering(rst);
   
@@ -14,13 +12,11 @@ int rrr(routingInst *rst) {
   for (int i = 0; i < rst->numNets; i++){
     // std::cout << "Ripping up the i:"<<i<<"th net n"<<rst->nets[i].id<<"\n";
     for(int j = 0; j<rst->nets[i].nroute.numSegs; j++) {
-      // std::cout << "Ripping up the seg with "<<rst->nets[i].nroute.segments[k].numEdges<<" edges\n";
-      // std::cout << "Ripping up the edge "<<rst->nets[i].nroute.segments[k].edges[l]<<"\n";
-      // rst->edgeUtils[rst->nets[i].nroute.segments[k].edges[l]]--;
       delete[] rst->nets[i].nroute.segments[j].edges;
-      }
+    }
     delete[] rst->nets[i].nroute.segments;
   }
+
   // Reset the edge utilisation
   std::fill_n(rst->edgeUtils,rst->numEdges,0);
   
@@ -36,17 +32,18 @@ int rrr(routingInst *rst) {
       rst->nets[i].nroute.segments[j].p2 = rst->nets[i].pins[j+1];
 
       // Reroute the net segments
-      relaxer = 0;
-      // do {
-        status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j, relaxer);
-        if(status==0) {
-          std::cout << "Rerouted failed for net:"<<i<<"\n";
-          relaxer += 2;
-        }
-      // } while (status == 0);
+      relaxer = std::min(2 * (rrrIter-1),10);
+      
+      status = singleNetReroute(rst, rst->nets[i].pins[j], rst->nets[i].pins[j+1], i, j, relaxer);
+      if(status==0) {
+        std::cout << "Rerouted failed for net:"<<i<<"\n";
+      }
     }
     std::cout << "Rerouted net:"<<i<<"\n";
   }
+  // Compute the New Edge Weights and costs
+  edgeWeightCal(rst);
+
   return 1;
 }
 
@@ -78,10 +75,10 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
   std::vector<point> path;
   std::vector<point>::size_type pathLen;
   
-  int topBound = std::max(start.y,dest.y)   ;//- 2; 
-  int botBound = std::min(start.y,dest.y)   ;//+ 2; 
-  int leftBound = std::min(start.x,dest.x)  ;//+ 2; 
-  int rightBound = std::max(start.x,dest.x) ;//- 2;
+  int topBound = std::max(start.y,dest.y)   + relaxer; 
+  int botBound = std::min(start.y,dest.y)   - relaxer; 
+  int leftBound = std::min(start.x,dest.x)  - relaxer; 
+  int rightBound = std::max(start.x,dest.x) + relaxer;
 
   // rst->nets[netIdx].nroute.segments[segIdx].numEdges = manDist(start,dest);
   // rst->nets[netIdx].nroute.segments[segIdx].edges = new int[rst->nets[netIdx].nroute.segments[segIdx].numEdges];
@@ -163,34 +160,24 @@ int singleNetReroute(routingInst *rst, point start, point dest, int netIdx, int 
 
 //Calculating edge weights for rip up and reroute
 int edgeWeightCal(routingInst *rst){
-  int newcost;
-  
-  rst->edgeUtilityHistory = new int [rst->numEdges];
-  rst->edgeOverFlow = new int [rst->numEdges];
-  rst->edgeWeight = new int [rst->numEdges];
-  //Initialising the weight ordering arrays to 0 
-  std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
-  std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
-  std::fill_n(rst->edgeWeight,rst->numEdges,0);
-  
+  int netCost;
+  rst->totalRoutingCost = 0;
   for(int i=0; i<rst->numNets; i++) { 
-    newcost = 0;
-    int presentedge = 0;
-    net presentNet = rst->nets[i];
-    route presentRoute = presentNet.nroute;
+    netCost = 0;
+    int presentEdge = 0;
     for(int j=0; j<rst->nets[i].nroute.numSegs; j++) {
-      segment presentSegment = presentRoute.segments[j];
       for(int k = 0; k < rst->nets[i].nroute.segments[j].numEdges; k++) {
-        presentedge = presentSegment.edges[k];
-        rst->edgeOverFlow[presentedge] = std::max(rst->edgeUtils[presentedge] - rst->edgeCaps[presentedge],0);
-        if(rst->edgeOverFlow[presentedge]>0){
-          rst->edgeUtilityHistory[presentedge] = rst->edgeUtilityHistory[presentedge] + 1;
+        presentEdge = rst->nets[i].nroute.segments[j].edges[k];
+        rst->edgeOverFlow[presentEdge] = std::max(rst->edgeUtils[presentEdge] - rst->edgeCaps[presentEdge],0);
+        if(rst->edgeOverFlow[presentEdge]>0){
+          rst->edgeUtilityHistory[presentEdge]++;
         }
-        rst->edgeWeight[presentedge] = rst->edgeOverFlow[presentedge] * rst->edgeUtilityHistory[presentedge];
-        newcost = newcost + rst->edgeWeight[presentedge];
+        rst->edgeWeight[presentEdge] = rst->edgeOverFlow[presentEdge] * rst->edgeUtilityHistory[presentEdge];
+        netCost = netCost + rst->edgeWeight[presentEdge];
       }
     }
-    rst->nets[i].cost = newcost;
+    rst->nets[i].cost = netCost;
+    rst->totalRoutingCost += netCost;
   }
   return 1;
 }

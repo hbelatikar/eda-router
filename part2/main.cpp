@@ -69,6 +69,21 @@ int main(int argc, char **argv)
  		return 1;
  	}
 	
+	/// write the result
+ 	functionStart = std::chrono::high_resolution_clock::now();
+ 	status = writeOutput(outputFileName, rst);
+	functionStop = std::chrono::high_resolution_clock::now();
+	functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	std::cout << "Write Output Time After Initial Solution : " << functionDuration.count() << " ms \n";
+	totalTime += functionDuration.count();
+ 	
+	if(status==0) {
+ 		printf("ERROR: writing the result \n");
+ 		release(rst);
+ 		return 1;
+ 	}
+
+
 	/// Rip up and Reroute
 	if (rrrEn[3]=='1')
 	{	
@@ -77,22 +92,48 @@ int main(int argc, char **argv)
 		std::chrono::time_point<std::chrono::high_resolution_clock> rrrTime = std::chrono::high_resolution_clock::now();
 		std::chrono::milliseconds rrrDuration = std::chrono::duration_cast<std::chrono::milliseconds>(rrrTime - globalStart);
 		
+		std::chrono::time_point<std::chrono::high_resolution_clock> wrStart, wrStop;
+		std::chrono::milliseconds wrDuration;
+		int wrStatus = 0;		
 		u_int32_t rrrIter = 1;
-
+		long rrrUpdatedCost, bestCost;
+		// Perform the edge weight calculation once
+		edgeWeightCal(rst);
+		bestCost = rst->totalRoutingCost;
 		while (rrrDuration.count() < ENDTIME)
 		{	
 			std::cout << "RRR Iteration: " << rrrIter << "\n";
 			
 			// Perform RRR
-			status = rrr(rst);
+			status = rrr(rst, rrrIter);
 			if (status == 0) {
 				std::cout << "Could not perform RRR" << std::endl;
 				release(rst);
 				return 0;
+			} else {
+				// Calc total routing inst cost
+				rrrUpdatedCost = rst->totalRoutingCost;
+				if(rrrUpdatedCost < bestCost){
+					bestCost = rrrUpdatedCost;
+					std::cout << "Best cost is " << bestCost << "\n";
+
+					wrStart = std::chrono::high_resolution_clock::now();
+					wrStatus = writeOutput(outputFileName, rst);
+					wrStop = std::chrono::high_resolution_clock::now();
+					wrDuration = std::chrono::duration_cast<std::chrono::milliseconds>(wrStop - wrStart);
+					std::cout << "Write Output Time after Best Cost: " << wrDuration.count() << " ms \n";
+					totalTime += wrDuration.count();
+					
+					if(wrStatus==0) {
+						printf("ERROR: writing the result \n");
+						release(rst);
+						return 1;
+					}
+				}
 			}
 			
 			/////////////// REMOVE THIS ONCE DONE /////////////////////////////
-			 std::this_thread::sleep_for(std::chrono::milliseconds(100));  //
+			//  std::this_thread::sleep_for(std::chrono::milliseconds(100));  //
 			/////////////// REMOVE THIS ONCE DONE /////////////////////////////
 
 			rrrTime = std::chrono::high_resolution_clock::now(); 
@@ -106,19 +147,19 @@ int main(int argc, char **argv)
 		std::cout << "RRR Time : " << functionDuration.count() << " ms \n";
 	}
 
- 	/// write the result
- 	functionStart = std::chrono::high_resolution_clock::now();
- 	status = writeOutput(outputFileName, rst);
-	functionStop = std::chrono::high_resolution_clock::now();
-	functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
-	std::cout << "Write Output Time : " << functionDuration.count() << " ms \n";
-	totalTime += functionDuration.count();
+ 	// /// write the result
+ 	// functionStart = std::chrono::high_resolution_clock::now();
+ 	// status = writeOutput(outputFileName, rst);
+	// functionStop = std::chrono::high_resolution_clock::now();
+	// functionDuration = std::chrono::duration_cast<std::chrono::milliseconds>(functionStop - functionStart);
+	// std::cout << "Write Output Time : " << functionDuration.count() << " ms \n";
+	// totalTime += functionDuration.count();
  	
-	if(status==0) {
- 		printf("ERROR: writing the result \n");
- 		release(rst);
- 		return 1;
- 	}
+	// if(status==0) {
+ 	// 	printf("ERROR: writing the result \n");
+ 	// 	release(rst);
+ 	// 	return 1;
+ 	// }
 
  	functionStart = std::chrono::high_resolution_clock::now();
  	release(rst);

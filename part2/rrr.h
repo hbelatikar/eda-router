@@ -9,7 +9,7 @@
 #include <set>
 #include <queue>
 
-int rrr (routingInst *rst);
+int rrr (routingInst *rst, int rrrIter);
 
 int singleNetReroute(routingInst *, point, point, int, int, int);
 

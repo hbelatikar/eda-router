@@ -89,7 +89,9 @@ class point {
     int gy ;		/* y dimension of the global routing grid */
     
     int cap ;
-    
+
+    long totalRoutingCost;
+
     int numNets ;	/* number of nets */
     net *nets ;		/* array of nets */
     

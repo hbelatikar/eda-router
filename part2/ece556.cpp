@@ -20,13 +20,21 @@ int readBenchmark(const char *fileName, routingInst *rst){
         stream >> rst->gx >> rst->gy;
         rst->numEdges = (rst->gx * (rst->gy - 1) + rst->gy * (rst->gx - 1));
         rst->edgeCaps = new int[rst->numEdges];
+        
         rst->edgeUtils = new int[rst->numEdges];
+        rst->edgeWeight = new int [rst->numEdges];
+        rst->edgeOverFlow = new int [rst->numEdges];
+        rst->edgeUtilityHistory = new int [rst->numEdges];
+        //Initialising the weight ordering arrays to 0 
+        std::fill_n(rst->edgeUtils,rst->numEdges,0);
+        std::fill_n(rst->edgeWeight,rst->numEdges,0);
+        std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
+        std::fill_n(rst->edgeUtilityHistory,rst->numEdges,1);
       }
       else if (token == "capacity") {
         // Parse the default capacity
         stream >> rst->cap;
         std::fill_n(rst->edgeCaps,rst->numEdges,rst->cap);
-        std::fill_n(rst->edgeUtils,rst->numEdges,0);
       }
       else if (token == "num") {
         // Parse all the number of nets
