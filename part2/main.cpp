@@ -4,8 +4,8 @@
 #include "rrr.h"
 #include <chrono>
 #include <thread>
-// #define ENDTIME 900000 //Define the exit time as 900s (15 mins)
-#define ENDTIME 10000
+#define ENDTIME 900000 //Define the exit time as 900s (15 mins)
+//#define ENDTIME 10000
 
 int main(int argc, char **argv)
 {
@@ -100,6 +100,7 @@ int main(int argc, char **argv)
 		// Perform the edge weight calculation once
 		edgeWeightCal(rst);
 		bestCost = rst->totalRoutingCost;
+		std::cout << "Best cost : " << bestCost << "\n";
 		while (rrrDuration.count() < ENDTIME)
 		{	
 			std::cout << "RRR Iteration: " << rrrIter << "\n";
@@ -113,15 +114,15 @@ int main(int argc, char **argv)
 			} else {
 				// Calc total routing inst cost
 				rrrUpdatedCost = rst->totalRoutingCost;
+//				std::cout << "Updated cost is : "<< rrrUpdatedCost << " but bestCost is " << bestCost << "\n";
 				if(rrrUpdatedCost < bestCost){
 					bestCost = rrrUpdatedCost;
-					std::cout << "Best cost is " << bestCost << "\n";
 
 					wrStart = std::chrono::high_resolution_clock::now();
 					wrStatus = writeOutput(outputFileName, rst);
 					wrStop = std::chrono::high_resolution_clock::now();
 					wrDuration = std::chrono::duration_cast<std::chrono::milliseconds>(wrStop - wrStart);
-					std::cout << "Write Output Time after Best Cost: " << wrDuration.count() << " ms \n";
+//					std::cout << "Write Output Time after Best Cost: " << wrDuration.count() << " ms \n";
 					totalTime += wrDuration.count();
 					
 					if(wrStatus==0) {
