@@ -29,7 +29,7 @@ int readBenchmark(const char *fileName, routingInst *rst){
         std::fill_n(rst->edgeUtils,rst->numEdges,0);
         std::fill_n(rst->edgeWeight,rst->numEdges,0);
         std::fill_n(rst->edgeOverFlow,rst->numEdges,0);
-        std::fill_n(rst->edgeUtilityHistory,rst->numEdges,1);
+        std::fill_n(rst->edgeUtilityHistory,rst->numEdges,0);
       }
       else if (token == "capacity") {
         // Parse the default capacity
