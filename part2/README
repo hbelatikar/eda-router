@@ -5,6 +5,15 @@ Team Members:
 
 Responsibilities:
 Hrishikesh :
-
+    1) Input args modification
+    2) Net Decompose function
+    3) A* implementation
+    4) Function timing
+    5) point struct modification to class
+    6) Neigbors function and bounding box
 Rahimullah :
+    1) Net reordering function
+    2) Edge weight calculation function
+    3) Improved part 1 general Initial solution
+    4) Helped in analyzing A star algorithm
 
